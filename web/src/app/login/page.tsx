@@ -1,0 +1,145 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import { checkDeviceBiometricAvailable, authenticateWithDeviceBiometrics } from "@/lib/webauthn";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasBiometrics, setHasBiometrics] = useState(false);
+
+  useEffect(() => {
+    checkDeviceBiometricAvailable().then(setHasBiometrics);
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setError(null);
+      await signInWithPopup(auth, googleProvider);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in with Google");
+    }
+  };
+
+  const handleDeviceBiometricAuth = async () => {
+    try {
+      setError(null);
+      const success = await authenticateWithDeviceBiometrics(email);
+      if (success) {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      setError(err.message || "Device biometric authentication failed");
+    }
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Authentication failed");
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-[70vh]">
+      <div className="glass-panel p-8 w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-white">
+            {isSignUp ? "Create Account" : "Welcome Back"}
+          </h2>
+          <p className="text-xs text-white/70">
+            Sign in to sync your schedule across Web &amp; Android
+          </p>
+        </div>
+
+        {error && (
+          <div className="p-3 bg-red-500/20 border border-red-500 rounded-xl text-xs text-red-200">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <button
+            onClick={handleGoogleSignIn}
+            className="w-full py-3 px-4 rounded-xl bg-white text-black font-bold flex items-center justify-center space-x-3 hover:bg-gray-100 transition-colors text-sm"
+          >
+            <span>Sign in with Google</span>
+          </button>
+
+          {hasBiometrics && (
+            <button
+              onClick={handleDeviceBiometricAuth}
+              className="w-full py-3 px-4 rounded-xl glass-button text-white font-bold flex items-center justify-center space-x-3 text-sm"
+            >
+              <span>🔑 Sign in with Device Biometrics (Touch ID / Face ID / Windows Hello)</span>
+            </button>
+          )}
+        </div>
+
+        <div className="relative flex items-center justify-center my-4">
+          <div className="border-t border-white/20 w-full" />
+          <span className="bg-[#0d0b14] px-3 text-xs text-white/50 absolute">OR</span>
+        </div>
+
+        <form onSubmit={handleEmailAuth} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-white/80 mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm focus:outline-none focus:border-[#E0B0FF]"
+              placeholder="student@university.edu"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-white/80 mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm focus:outline-none focus:border-[#E0B0FF]"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3 rounded-xl bg-[#E0B0FF] text-black font-extrabold text-sm hover:bg-white transition-colors"
+          >
+            {isSignUp ? "Sign Up" : "Sign In"}
+          </button>
+        </form>
+
+        <div className="text-center pt-2">
+          <button
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-xs text-[#E0B0FF] hover:underline"
+          >
+            {isSignUp
+              ? "Already have an account? Sign In"
+              : "Don't have an account? Sign Up"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

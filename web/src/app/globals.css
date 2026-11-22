@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0d0b14;
+  --foreground: #ffffff;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism utility card */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1.5rem;
+}
+
+.glass-button {
+  background: rgba(224, 176, 255, 0.25);
+  border: 1px solid rgba(224, 176, 255, 0.5);
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-button:hover {
+  background: rgba(224, 176, 255, 0.4);
+  transform: translateY(-2px);
+}

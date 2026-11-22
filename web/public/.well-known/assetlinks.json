@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.collegetimetable",
+      "sha256_cert_fingerprints": [
+        "79:D8:04:80:0A:89:06:5C:87:32:7E:19:AD:1C:B8:6A:03:14:90:22:95:F6:3B:D4:E9:D0:A6:91:E0:15:43:24"
+      ]
+    }
+  }
+]
