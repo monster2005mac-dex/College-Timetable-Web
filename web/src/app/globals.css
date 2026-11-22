@@ -384,3 +384,50 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 760px) {
   .site-header::before { inset: 5px 3vw; }
 }
+
+/* Product surfaces share the same tactile, campus-night visual language. */
+.site-main > div:not(.landing-shell) { position: relative; }
+.site-main > div:not(.landing-shell)::before {
+  position: absolute; z-index: -1; top: -22px; right: 2%; width: 320px; height: 220px;
+  content: ''; pointer-events: none; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(183,244,121,.075), transparent 68%); filter: blur(18px);
+}
+.site-main > div:not(.landing-shell) h1 { color: #f0f4ed; letter-spacing: -.055em; }
+.site-main > div:not(.landing-shell) h2, .site-main > div:not(.landing-shell) h3 { letter-spacing: -.035em; }
+.site-main > div:not(.landing-shell) .glass-panel { border-color: rgba(220,239,220,.105); background: linear-gradient(145deg, rgba(24,33,32,.94), rgba(13,19,21,.97)); }
+.site-main > div:not(.landing-shell) > .glass-panel:first-child {
+  overflow: hidden; border-color: rgba(183,244,121,.17);
+  background: radial-gradient(ellipse at 90% 0%, rgba(183,244,121,.11), transparent 35%), linear-gradient(125deg, rgba(26,39,33,.98), rgba(15,22,23,.98));
+}
+.site-main > div:not(.landing-shell) > .glass-panel:first-child::after {
+  position: absolute; top: -48px; right: 8%; width: 150px; height: 150px; content: '';
+  border: 1px solid rgba(183,244,121,.12); border-radius: 50%; transform: rotateX(68deg) rotateZ(-28deg);
+  box-shadow: 0 0 0 16px rgba(144,219,255,.025), 0 0 0 34px rgba(183,244,121,.025); pointer-events: none;
+}
+.site-main .glass-panel button:not(.month-day), .site-main button.glass-button {
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.site-main .glass-panel button:not(.month-day):hover, .site-main button.glass-button:hover { transform: translateY(-2px); }
+.site-main button[class*="bg-[#b7f479]"] { box-shadow: 0 8px 24px rgba(183,244,121,.13), inset 0 1px rgba(255,255,255,.24); }
+.site-main .group:hover { border-color: rgba(183,244,121,.25); }
+.site-main .group button:focus-visible { opacity: 1; }
+.site-main input:not([type="checkbox"]), .site-main select, .site-main textarea {
+  border-color: rgba(221,237,221,.14); background-color: rgba(7,12,13,.74); transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.site-main input:not([type="checkbox"]):focus, .site-main select:focus, .site-main textarea:focus {
+  border-color: rgba(183,244,121,.62); background-color: rgba(10,16,16,.96); box-shadow: 0 0 0 4px rgba(183,244,121,.08);
+}
+.site-main [role="dialog"], .site-main .fixed.inset-0 > .glass-panel {
+  border-color: rgba(183,244,121,.2); background: linear-gradient(145deg, rgba(24,33,32,.99), rgba(9,14,16,.99));
+  box-shadow: 0 32px 100px rgba(0,0,0,.58), inset 0 1px rgba(255,255,255,.1);
+}
+.site-main .month-day { background: linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.012)); }
+.site-main .month-day.is-selected { box-shadow: inset 0 1px rgba(255,255,255,.16), 0 10px 24px rgba(183,244,121,.08); }
+.site-main .calendar-event { border-color: rgba(255,255,255,.09); background: linear-gradient(105deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); }
+.site-main .profile-preview-card, .site-main .profile-form-card { border-color: rgba(183,244,121,.14); }
+.site-main .loading-state { text-shadow: 0 0 22px rgba(183,244,121,.2); }
+
+@media (max-width: 760px) {
+  .site-main > div:not(.landing-shell) > .glass-panel:first-child::after { right: -35px; }
+  .site-main .group button { opacity: 1; }
+}
