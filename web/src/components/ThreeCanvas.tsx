@@ -20,10 +20,21 @@ export default function ThreeCanvas() {
     );
     camera.position.z = 5;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const canvas = document.createElement("canvas");
+    if (!canvas.getContext("webgl2")) return;
+
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    } catch {
+      return;
+    }
+
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mount.appendChild(renderer.domElement);
+    const fallback = mount.querySelector<HTMLElement>("[data-orbit-fallback]");
+    if (fallback) fallback.hidden = true;
 
     // 3D Glass Structural Geometry (Icosahedron)
     const geometry = new THREE.IcosahedronGeometry(1.8, 1);
@@ -135,5 +146,19 @@ export default function ThreeCanvas() {
     };
   }, []);
 
-  return <div ref={mountRef} className="w-full h-[380px] md:h-[480px] relative" />;
+  return (
+    <div ref={mountRef} className="w-full h-[380px] md:h-[480px] relative">
+      <div
+        data-orbit-fallback
+        aria-hidden="true"
+        className="absolute inset-0 grid place-items-center overflow-hidden"
+      >
+        <div className="relative h-56 w-56 rounded-full border border-white/20 bg-gradient-to-br from-fuchsia-300/30 via-violet-400/10 to-cyan-200/20 shadow-[0_0_90px_rgba(167,139,250,0.28)] md:h-72 md:w-72">
+          <div className="absolute inset-5 rounded-full border border-white/20" />
+          <div className="absolute inset-12 rounded-full border border-dashed border-cyan-100/30" />
+          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_24px_rgba(255,255,255,0.9)]" />
+        </div>
+      </div>
+    </div>
+  );
 }
