@@ -98,7 +98,7 @@ export default function DashboardPage() {
     );
   }
 
-  const dayEntries = entries.filter((e) => e.day === selectedDay).sort((a, b) => a.startMin - b.startMin);
+  const dayEntries = entries.filter((e) => !e.dateIso && e.day === selectedDay).sort((a, b) => a.startMin - b.startMin);
 
   return (
     <div className="space-y-8 py-4">

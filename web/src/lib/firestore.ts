@@ -16,6 +16,9 @@ export interface ClassEntry {
   startMin: number;
   endMin: number;
   colorIndex: number;
+  dateIso?: string;
+  overrideOfId?: string;
+  isCancelled?: boolean;
 }
 
 export interface AttendanceRecord {

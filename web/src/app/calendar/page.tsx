@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { ClassEntry, ExamEntry, subscribeEntries, subscribeExams } from "@/lib/firestore";
 import { formatMinutes } from "@/lib/useCurrentTime";
@@ -15,6 +16,17 @@ function toLocalDateString(date: Date) {
   return localDate.toISOString().slice(0, 10);
 }
 
+function getEntriesForDate(entries: ClassEntry[], date: Date) {
+  const dateIso = toLocalDateString(date);
+  const weekday = ((date.getDay() + 6) % 7) + 1;
+  const dateEntries = entries.filter((entry) => entry.dateIso === dateIso);
+  const overriddenIds = new Set(dateEntries.map((entry) => entry.overrideOfId).filter(Boolean));
+  return [
+    ...entries.filter((entry) => !entry.dateIso && entry.day === weekday && !overriddenIds.has(entry.id)),
+    ...dateEntries.filter((entry) => !entry.isCancelled),
+  ];
+}
+
 export default function CalendarPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -22,6 +34,7 @@ export default function CalendarPage() {
   const [exams, setExams] = useState<ExamEntry[]>([]);
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [dateReady, setDateReady] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -41,6 +54,24 @@ export default function CalendarPage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    const dateIso = new URLSearchParams(window.location.search).get("date");
+    if (dateIso && /^\d{4}-\d{2}-\d{2}$/.test(dateIso)) {
+      const parsed = new Date(`${dateIso}T12:00:00`);
+      if (!Number.isNaN(parsed.getTime()) && toLocalDateString(parsed) === dateIso) {
+        setSelectedDate(parsed);
+        setVisibleMonth(parsed);
+      }
+    }
+    setDateReady(true);
+  }, []);
+
+  const chooseDate = (date: Date) => {
+    setSelectedDate(date);
+    setVisibleMonth(date);
+    window.history.replaceState(null, "", `${window.location.pathname}?date=${toLocalDateString(date)}`);
+  };
+
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
   const monthLabel = visibleMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -55,18 +86,17 @@ export default function CalendarPage() {
     [calendarCellCount, leadingDays, daysInMonth]
   );
   const selectedDateKey = toLocalDateString(selectedDate);
-  const selectedWeekday = ((selectedDate.getDay() + 6) % 7) + 1;
-  const selectedEntries = entries
-    .filter((entry) => entry.day === selectedWeekday)
+  const selectedEntries = getEntriesForDate(entries, selectedDate)
     .sort((a, b) => a.startMin - b.startMin);
   const selectedExams = exams.filter((exam) => exam.dateIso === selectedDateKey);
   const todayKey = toLocalDateString(new Date());
 
   const moveMonth = (amount: number) => {
     const nextMonth = new Date(year, month + amount, 1);
-    setVisibleMonth(nextMonth);
-    setSelectedDate(nextMonth);
+    chooseDate(nextMonth);
   };
+
+  if (!dateReady) return <div className="py-24 text-center text-sm text-white/60">Loading your calendar…</div>;
 
   return (
     <div className="space-y-6 py-4">
@@ -90,8 +120,7 @@ export default function CalendarPage() {
 
             const date = new Date(year, month, dateNumber);
             const dateKey = toLocalDateString(date);
-            const weekday = ((date.getDay() + 6) % 7) + 1;
-            const classCount = entries.filter((entry) => entry.day === weekday).length;
+            const classCount = getEntriesForDate(entries, date).length;
             const examCount = exams.filter((exam) => exam.dateIso === dateKey).length;
             const isSelected = selectedDateKey === dateKey;
 
@@ -99,7 +128,7 @@ export default function CalendarPage() {
               <button
                 type="button"
                 key={dateKey}
-                onClick={() => setSelectedDate(date)}
+                onClick={() => chooseDate(date)}
                 className={`month-day ${isSelected ? "is-selected" : ""} ${dateKey === todayKey ? "is-today" : ""}`}
                 aria-pressed={isSelected}
                 aria-label={`${date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}${classCount ? `, ${classCount} classes` : ""}${examCount ? `, ${examCount} deadlines` : ""}`}
@@ -122,7 +151,10 @@ export default function CalendarPage() {
             <div className="eyebrow"><CalendarDays size={13} /> SELECTED DAY</div>
             <h2>{selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h2>
           </div>
-          <span>{selectedEntries.length + selectedExams.length} items</span>
+          <div className="calendar-selected-actions">
+            <span>{selectedEntries.length + selectedExams.length} items</span>
+            <Link className="calendar-date-edit" href={`/week?date=${selectedDateKey}`}>Edit this date</Link>
+          </div>
         </div>
         {selectedEntries.length === 0 && selectedExams.length === 0 ? (
           <p className="calendar-empty-state">No classes or deadlines on this day.</p>
