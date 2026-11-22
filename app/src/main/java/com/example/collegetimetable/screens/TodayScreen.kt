@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.collegetimetable.ClassEntry
 import com.example.collegetimetable.GlassPanel
 import com.example.collegetimetable.HeroStatus
@@ -136,6 +137,33 @@ fun TodayScreen(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 100.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                if (isSelectedToday) {
+                    item(key = "genz_3d_badge") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(accentColor.copy(alpha = 0.20f))
+                                    .border(1.dp, accentColor, CircleShape)
+                                    .padding(horizontal = 14.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "GEN Z 3D STRUCTURAL TIMETABLE ⚡ • CLOUD SYNC ACTIVE",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = accentColor,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
                 if (isSelectedToday && dayEntries.isNotEmpty()) {
                     item(key = "hero_now_card") {
                         val heroStatus = getHeroStatus(todayEntries, currentDateTime)

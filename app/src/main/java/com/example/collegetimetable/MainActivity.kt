@@ -78,6 +78,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.collegetimetable.components.FullMonthCalendarDialog
+import com.example.collegetimetable.components.ThreeDInteractiveBackground
 import com.example.collegetimetable.components.GlassAuthDialog
 import com.example.collegetimetable.components.GlassBottomBar
 import com.example.collegetimetable.components.GlassClassDialog
@@ -261,7 +262,7 @@ fun TimetableApp(
         containerColor = Color.Transparent
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            // Full Screen Wallpaper & Animated Light Orbs Scrim
+            // Full Screen Wallpaper & 3D Interactive WebGL Style Canvas
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -269,6 +270,7 @@ fun TimetableApp(
             ) {
                 WallpaperImage(selectedWallpaper = selectedWallpaper)
                 AmbientAuraBackground(accentColor = animatedAccent)
+                ThreeDInteractiveBackground(accentColor = animatedAccent)
 
                 Box(
                     modifier = Modifier
@@ -276,9 +278,9 @@ fun TimetableApp(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    Color.Black.copy(alpha = 0.40f),
-                                    Color.Black.copy(alpha = 0.60f),
-                                    Color.Black.copy(alpha = 0.78f)
+                                    Color.Black.copy(alpha = 0.35f),
+                                    Color.Black.copy(alpha = 0.55f),
+                                    Color.Black.copy(alpha = 0.75f)
                                 )
                             )
                         )
