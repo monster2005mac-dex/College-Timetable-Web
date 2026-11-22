@@ -33,7 +33,8 @@ export default function SiteHeader() {
     <header className="site-header">
       <Link href="/" className="brand" aria-label="Campus Orbit Web home">
         <span className="brand-mark brand-logo-mark" aria-hidden="true">
-          <GraduationCap size={18} strokeWidth={1.8} />
+          <span className="brand-orbit"><i /></span>
+          <GraduationCap size={17} strokeWidth={1.9} />
         </span>
         <span className="brand-name">CAMPUS<span> / </span>ORBIT</span>
         <span className="brand-platform">WEB</span>

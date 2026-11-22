@@ -10,154 +10,144 @@ export default function ThreeCanvas() {
     const mount = mountRef.current;
     if (!mount) return;
 
-    // Scene setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      mount.clientWidth / mount.clientHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 5;
-
-    const canvas = document.createElement("canvas");
-    if (!canvas.getContext("webgl2")) return;
-
+    const fallback = mount.querySelector<HTMLElement>("[data-orbit-fallback]");
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
     } catch {
       return;
     }
 
-    renderer.setSize(mount.clientWidth, mount.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    camera.position.set(0, 0.15, 7.2);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.setClearColor(0x000000, 0);
     mount.appendChild(renderer.domElement);
-    const fallback = mount.querySelector<HTMLElement>("[data-orbit-fallback]");
+    renderer.domElement.className = "three-scene-canvas";
     if (fallback) fallback.hidden = true;
 
-    // 3D Glass Structural Geometry (Icosahedron)
-    const geometry = new THREE.IcosahedronGeometry(1.8, 1);
-    const material = new THREE.MeshPhysicalMaterial({
-      color: 0xe0b0ff,
-      metalness: 0.1,
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const coreGeometry = new THREE.IcosahedronGeometry(1.22, 2);
+    const coreMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x9bdc9a,
+      metalness: 0.34,
       roughness: 0.2,
-      transmission: 0.9,
-      thickness: 1.2,
-      wireframe: false,
+      transmission: 0.48,
+      thickness: 1.4,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.88,
+      clearcoat: 0.9,
+      clearcoatRoughness: 0.14,
     });
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+    const core = new THREE.Mesh(coreGeometry, coreMaterial);
+    group.add(core);
 
-    // Wireframe Overlay
-    const wireframeMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.35,
-    });
-    const wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial);
-    scene.add(wireframeMesh);
+    const wireMaterial = new THREE.MeshBasicMaterial({ color: 0xd8f4ca, wireframe: true, transparent: true, opacity: 0.19 });
+    const wireframe = new THREE.Mesh(new THREE.IcosahedronGeometry(1.25, 1), wireMaterial);
+    group.add(wireframe);
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
+    const orbitMaterial = new THREE.MeshStandardMaterial({ color: 0xaeea84, metalness: 0.65, roughness: 0.24 });
+    const orbit = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.018, 12, 160), orbitMaterial);
+    orbit.rotation.set(1.08, 0.1, -0.3);
+    group.add(orbit);
+    const orbitTwo = new THREE.Mesh(new THREE.TorusGeometry(2.15, 0.009, 8, 160), new THREE.MeshBasicMaterial({ color: 0x86d9ff, transparent: true, opacity: 0.44 }));
+    orbitTwo.rotation.set(0.65, -0.75, 0.54);
+    group.add(orbitTwo);
 
-    const pointLight1 = new THREE.PointLight(0xe0b0ff, 3, 100);
-    pointLight1.position.set(5, 5, 5);
-    scene.add(pointLight1);
+    const bead = new THREE.Mesh(new THREE.SphereGeometry(0.07, 20, 20), new THREE.MeshBasicMaterial({ color: 0xf2f9d8 }));
+    bead.position.set(0.5, 1.74, 0.2);
+    group.add(bead);
 
-    const pointLight2 = new THREE.PointLight(0x80d8ff, 3, 100);
-    pointLight2.position.set(-5, -5, 5);
-    scene.add(pointLight2);
+    scene.add(new THREE.AmbientLight(0xe7f6e4, 1.1));
+    const keyLight = new THREE.PointLight(0xb7f479, 18, 18);
+    keyLight.position.set(4, 3, 5);
+    scene.add(keyLight);
+    const coolLight = new THREE.PointLight(0x90dbff, 12, 16);
+    coolLight.position.set(-4, -2, 3);
+    scene.add(coolLight);
 
-    // Particles Constellation
-    const particleCount = 200;
-    const particleGeometry = new THREE.BufferGeometry();
+    const particleCount = 120;
     const positions = new Float32Array(particleCount * 3);
-
-    for (let i = 0; i < particleCount * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 15;
+    for (let index = 0; index < particleCount; index += 1) {
+      const radius = 2.3 + Math.random() * 2.4;
+      const angle = Math.random() * Math.PI * 2;
+      positions[index * 3] = Math.cos(angle) * radius;
+      positions[index * 3 + 1] = (Math.random() - 0.5) * 4.4;
+      positions[index * 3 + 2] = (Math.random() - 0.5) * 3;
     }
-    particleGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3)
-    );
-
-    const particleMaterial = new THREE.PointsMaterial({
-      color: 0xe0b0ff,
-      size: 0.05,
-      transparent: true,
-      opacity: 0.6,
-    });
-    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    const particleGeometry = new THREE.BufferGeometry();
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const particles = new THREE.Points(particleGeometry, new THREE.PointsMaterial({ color: 0xc8edaa, size: 0.022, transparent: true, opacity: 0.72 }));
     scene.add(particles);
 
-    // Mouse Parallax Interaction
-    let mouseX = 0;
-    let mouseY = 0;
-
-    const onMouseMove = (event: MouseEvent) => {
-      mouseX = (event.clientX / window.innerWidth - 0.5) * 2;
-      mouseY = (event.clientY / window.innerHeight - 0.5) * 2;
+    let pointerX = 0;
+    let pointerY = 0;
+    let frameId = 0;
+    let width = 1;
+    let height = 1;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onPointerMove = (event: PointerEvent) => {
+      const bounds = mount.getBoundingClientRect();
+      pointerX = ((event.clientX - bounds.left) / bounds.width - 0.5) * 0.4;
+      pointerY = ((event.clientY - bounds.top) / bounds.height - 0.5) * 0.3;
     };
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      width = Math.max(1, entry.contentRect.width);
+      height = Math.max(1, entry.contentRect.height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
+      if (reducedMotion.matches) renderer.render(scene, camera);
+    });
+    resizeObserver.observe(mount);
+    mount.addEventListener("pointermove", onPointerMove);
 
-    window.addEventListener("mousemove", onMouseMove);
-
-    // Animation Loop
-    let animationFrameId: number;
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-
-      mesh.rotation.x += 0.005;
-      mesh.rotation.y += 0.008;
-      wireframeMesh.rotation.x += 0.005;
-      wireframeMesh.rotation.y += 0.008;
-      particles.rotation.y += 0.001;
-
-      // Smooth Mouse Parallax Rotation
-      mesh.rotation.y += (mouseX * 0.5 - mesh.rotation.y) * 0.05;
-      mesh.rotation.x += (mouseY * 0.5 - mesh.rotation.x) * 0.05;
-
+    let elapsed = 0;
+    let previous = 0;
+    const animate = (time: number) => {
+      frameId = requestAnimationFrame(animate);
+      const delta = Math.min((time - previous) / 1000, 0.05);
+      previous = time;
+      if (!reducedMotion.matches) elapsed += delta;
+      group.rotation.y += (pointerX + elapsed * 0.13 - group.rotation.y) * 0.035;
+      group.rotation.x += (pointerY + Math.sin(elapsed * 0.35) * 0.045 - group.rotation.x) * 0.035;
+      particles.rotation.y = elapsed * 0.025;
       renderer.render(scene, camera);
     };
-
-    animate();
-
-    // Resize Handler
-    const handleResize = () => {
-      if (!mount) return;
-      camera.aspect = mount.clientWidth / mount.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(mount.clientWidth, mount.clientHeight);
-    };
-
-    window.addEventListener("resize", handleResize);
+    frameId = requestAnimationFrame(animate);
 
     return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
-      if (mount && renderer.domElement) {
-        mount.removeChild(renderer.domElement);
-      }
+      cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      mount.removeEventListener("pointermove", onPointerMove);
+      coreGeometry.dispose();
+      coreMaterial.dispose();
+      wireframe.geometry.dispose();
+      wireMaterial.dispose();
+      orbit.geometry.dispose();
+      orbitMaterial.dispose();
+      orbitTwo.geometry.dispose();
+      (orbitTwo.material as THREE.Material).dispose();
+      bead.geometry.dispose();
+      (bead.material as THREE.Material).dispose();
+      particleGeometry.dispose();
+      (particles.material as THREE.Material).dispose();
+      renderer.dispose();
+      renderer.domElement.remove();
+      if (fallback) fallback.hidden = false;
     };
   }, []);
 
   return (
-    <div ref={mountRef} className="w-full h-[380px] md:h-[480px] relative">
-      <div
-        data-orbit-fallback
-        aria-hidden="true"
-        className="absolute inset-0 grid place-items-center overflow-hidden"
-      >
-        <div className="relative h-56 w-56 rounded-full border border-white/20 bg-gradient-to-br from-fuchsia-300/30 via-violet-400/10 to-cyan-200/20 shadow-[0_0_90px_rgba(167,139,250,0.28)] md:h-72 md:w-72">
-          <div className="absolute inset-5 rounded-full border border-white/20" />
-          <div className="absolute inset-12 rounded-full border border-dashed border-cyan-100/30" />
-          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_24px_rgba(255,255,255,0.9)]" />
-        </div>
+    <div ref={mountRef} className="three-scene" aria-hidden="true">
+      <div data-orbit-fallback className="orbit-fallback">
+        <div className="orbit-fallback-ring" />
+        <div className="orbit-fallback-ring orbit-fallback-ring-two" />
+        <div className="orbit-fallback-ring orbit-fallback-ring-three" />
+        <div className="orbit-fallback-core" />
       </div>
     </div>
   );
