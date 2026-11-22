@@ -91,8 +91,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-[#E0B0FF] animate-pulse text-lg font-bold">
-          Syncing with Cloud... ⚡
+        <div className="text-[#b7f479] animate-pulse text-lg font-bold">
+          Syncing your schedule…
         </div>
       </div>
     );
@@ -106,17 +106,17 @@ export default function DashboardPage() {
       <div className="glass-panel p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">
-            Welcome, {user?.displayName || user?.email?.split("@")[0] || "Student"} 👋
+            Welcome, {user?.displayName || user?.email?.split("@")[0] || "Student"}
           </h1>
           <p className="text-xs text-white/70">
-            Real-time live sync active across Android &amp; Web
+            Your schedule is connected and in sync
           </p>
         </div>
 
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-5 py-2.5 rounded-full bg-[#E0B0FF] text-black font-extrabold text-sm hover:bg-white transition-colors"
+            className="px-5 py-2.5 rounded-full bg-[#b7f479] text-black font-extrabold text-sm hover:bg-white transition-colors"
           >
             + Add Class / Task
           </button>
@@ -140,7 +140,7 @@ export default function DashboardPage() {
               onClick={() => setSelectedDay(dayVal)}
               className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
                 isSelected
-                  ? "bg-[#E0B0FF] text-black shadow-lg shadow-[#E0B0FF]/20"
+                  ? "bg-[#b7f479] text-black shadow-lg shadow-[#b7f479]/20"
                   : "glass-panel text-white/80 hover:bg-white/10"
               }`}
             >
@@ -165,7 +165,7 @@ export default function DashboardPage() {
             {dayEntries.map((entry) => (
               <div key={entry.id} className="glass-panel p-5 space-y-3 relative group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#E0B0FF]">
+                  <span className="text-xs font-bold text-[#b7f479]">
                     {Math.floor(entry.startMin / 60)}:
                     {(entry.startMin % 60).toString().padStart(2, "0")} –{" "}
                     {Math.floor(entry.endMin / 60)}:
@@ -244,7 +244,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-[#E0B0FF] text-black font-extrabold text-xs hover:bg-white"
+                  className="flex-1 py-2.5 rounded-xl bg-[#b7f479] text-black font-extrabold text-xs hover:bg-white"
                 >
                   Save Slot
                 </button>

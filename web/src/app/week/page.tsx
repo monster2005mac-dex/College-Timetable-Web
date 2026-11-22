@@ -31,7 +31,7 @@ export default function WeekGridPage() {
     <div className="space-y-6 py-4">
       <div className="glass-panel p-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Full Week Schedule Grid 🗓️</h1>
+          <h1 className="text-2xl font-extrabold text-white">Your week at a glance</h1>
           <p className="text-xs text-white/70">Complete 7-day timetable matrix view</p>
         </div>
       </div>
@@ -46,7 +46,7 @@ export default function WeekGridPage() {
           return (
             <div key={name} className="glass-panel p-4 space-y-3 min-w-[140px]">
               <div className="text-center pb-2 border-b border-white/10">
-                <h3 className="font-extrabold text-[#E0B0FF] text-sm">{name}</h3>
+                <h3 className="font-extrabold text-[#b7f479] text-sm">{name}</h3>
                 <span className="text-[10px] text-white/50">{dayEntries.length} Slots</span>
               </div>
 
@@ -58,7 +58,7 @@ export default function WeekGridPage() {
                     key={e.id}
                     className="p-3 rounded-xl bg-white/10 border border-white/15 space-y-1"
                   >
-                    <span className="text-[10px] font-bold text-[#E0B0FF] block">
+                    <span className="text-[10px] font-bold text-[#b7f479] block">
                       {formatMinutes(e.startMin)} – {formatMinutes(e.endMin)}
                     </span>
                     <h4 className="font-bold text-xs text-white truncate">{e.subject}</h4>

@@ -30,7 +30,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 py-4 max-w-3xl mx-auto">
       <div className="glass-panel p-6">
-        <h1 className="text-2xl font-extrabold text-white">Preferences &amp; Style ⚙️</h1>
+        <h1 className="text-2xl font-extrabold text-white">Settings and preferences</h1>
         <p className="text-xs text-white/70">Manage sync settings, exported files &amp; time formats</p>
       </div>
 
@@ -39,7 +39,7 @@ export default function SettingsPage() {
         <h3 className="text-lg font-bold text-white">Cloud Account &amp; Sync</h3>
         <div className="p-4 rounded-xl bg-white/10 border border-white/20 flex items-center justify-between">
           <div>
-            <span className="text-xs text-[#E0B0FF] font-bold block">SIGNED IN USER</span>
+            <span className="text-xs text-[#b7f479] font-bold block">SIGNED IN USER</span>
             <span className="text-sm font-bold text-white">{user?.email || "Student"}</span>
           </div>
           <button
@@ -59,9 +59,9 @@ export default function SettingsPage() {
         </p>
         <button
           onClick={() => exportTimetableIcs(entries)}
-          className="px-6 py-3 rounded-full bg-[#E0B0FF] text-black font-extrabold text-xs hover:bg-white transition-colors"
+          className="px-6 py-3 rounded-full bg-[#b7f479] text-black font-extrabold text-xs hover:bg-white transition-colors"
         >
-          Export .ics File 📅
+          Export .ics file
         </button>
       </div>
 
@@ -75,7 +75,7 @@ export default function SettingsPage() {
           type="checkbox"
           checked={is24Hour}
           onChange={(e) => setIs24Hour(e.target.checked)}
-          className="w-5 h-5 accent-[#E0B0FF]"
+          className="w-5 h-5 accent-[#b7f479]"
         />
       </div>
     </div>

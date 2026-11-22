@@ -86,44 +86,46 @@ export default function LoginPage() {
               onClick={handleDeviceBiometricAuth}
               className="w-full py-3 px-4 rounded-xl glass-button text-white font-bold flex items-center justify-center space-x-3 text-sm"
             >
-              <span>🔑 Sign in with Device Biometrics (Touch ID / Face ID / Windows Hello)</span>
+              <span>Sign in with device biometrics (Touch ID / Face ID / Windows Hello)</span>
             </button>
           )}
         </div>
 
         <div className="relative flex items-center justify-center my-4">
           <div className="border-t border-white/20 w-full" />
-          <span className="bg-[#0d0b14] px-3 text-xs text-white/50 absolute">OR</span>
+          <span className="bg-[#090c0e] px-3 text-xs text-white/50 absolute">OR</span>
         </div>
 
         <form onSubmit={handleEmailAuth} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-white/80 mb-1">Email</label>
+            <label htmlFor="email" className="block text-xs font-semibold text-white/80 mb-1">Email</label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm focus:outline-none focus:border-[#E0B0FF]"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm focus:outline-none focus:border-[#b7f479]"
               placeholder="student@university.edu"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-white/80 mb-1">Password</label>
+            <label htmlFor="password" className="block text-xs font-semibold text-white/80 mb-1">Password</label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm focus:outline-none focus:border-[#E0B0FF]"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm focus:outline-none focus:border-[#b7f479]"
               placeholder="••••••••"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-[#E0B0FF] text-black font-extrabold text-sm hover:bg-white transition-colors"
+            className="w-full py-3 rounded-xl bg-[#b7f479] text-black font-extrabold text-sm hover:bg-white transition-colors"
           >
             {isSignUp ? "Sign Up" : "Sign In"}
           </button>
@@ -132,7 +134,7 @@ export default function LoginPage() {
         <div className="text-center pt-2">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-xs text-[#E0B0FF] hover:underline"
+            className="text-xs text-[#b7f479] hover:underline"
           >
             {isSignUp
               ? "Already have an account? Sign In"

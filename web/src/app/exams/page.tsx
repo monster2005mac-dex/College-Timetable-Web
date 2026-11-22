@@ -65,7 +65,7 @@ export default function ExamsPage() {
       <div className="glass-panel p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-white">
-            Exams &amp; Assignments Tracker 📝
+            Exams and assignments
           </h1>
           <p className="text-xs text-white/70">
             Priority deadline manager synced with Android
@@ -74,7 +74,7 @@ export default function ExamsPage() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-5 py-2.5 rounded-full bg-[#E0B0FF] text-black font-extrabold text-sm hover:bg-white transition-colors"
+          className="px-5 py-2.5 rounded-full bg-[#b7f479] text-black font-extrabold text-sm hover:bg-white transition-colors"
         >
           + Add Deadline
         </button>
@@ -110,7 +110,7 @@ export default function ExamsPage() {
 
               <h3 className="text-lg font-extrabold text-white">{exam.title}</h3>
               <p className="text-xs text-white/70">{exam.subject}</p>
-              <p className="text-xs text-[#E0B0FF] font-bold">Due Date: {exam.dateIso}</p>
+              <p className="text-xs text-[#b7f479] font-bold">Due Date: {exam.dateIso}</p>
             </div>
           ))}
         </div>
@@ -168,7 +168,7 @@ export default function ExamsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-[#E0B0FF] text-black font-extrabold text-xs hover:bg-white"
+                  className="flex-1 py-2.5 rounded-xl bg-[#b7f479] text-black font-extrabold text-xs hover:bg-white"
                 >
                   Save Deadline
                 </button>

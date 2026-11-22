@@ -5,9 +5,9 @@ export default function TermsPage() {
       <p className="text-sm text-white/70">Last updated: {new Date().toLocaleDateString()}</p>
 
       <section className="space-y-3 text-sm text-white/80">
-        <h2 className="text-[#E0B0FF] font-bold text-lg">1. Usage Agreement</h2>
+        <h2 className="text-[#b7f479] font-bold text-lg">1. Usage Agreement</h2>
         <p>
-          By accessing College Timetable Pro on Web or Android, you agree to these terms. College Timetable Pro is provided as a student productivity tool.
+          By accessing Campus Orbit Web or its companion Android app, College Timetable Pro, you agree to these terms. Campus Orbit Web is provided as a student productivity tool.
         </p>
       </section>
     </div>

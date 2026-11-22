@@ -74,7 +74,7 @@ export default function AttendancePage() {
       <div className="glass-panel p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-white">
-            Attendance &amp; Bunk Manager 🎓
+            Attendance and bunk manager
           </h1>
           <p className="text-xs text-white/70">
             Smart bunk calculator synced live across Web &amp; Android
@@ -89,7 +89,7 @@ export default function AttendancePage() {
               onClick={() => setTargetPct(pct)}
               className={`px-3 py-1.5 rounded-full text-xs font-bold ${
                 targetPct === pct
-                  ? "bg-[#E0B0FF] text-black"
+                  ? "bg-[#b7f479] text-black"
                   : "glass-panel text-white/80"
               }`}
             >
@@ -138,7 +138,7 @@ export default function AttendancePage() {
                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${
-                      isSafe ? "bg-[#E0B0FF]" : "bg-red-400"
+                      isSafe ? "bg-[#b7f479]" : "bg-red-400"
                     }`}
                     style={{ width: `${Math.min(100, rec.percentage)}%` }}
                   />
@@ -153,7 +153,7 @@ export default function AttendancePage() {
                         : "bg-red-500/20 text-red-300 border border-red-500/30"
                     }`}
                   >
-                    {isSafe ? "Safe to Skip 🟢" : "Attend Next Class 🔴"}
+                    {isSafe ? "Above target" : "Attend the next class"}
                   </span>
 
                   <div className="flex space-x-2">
