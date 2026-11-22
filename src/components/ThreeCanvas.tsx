@@ -1,139 +1,32 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import * as THREE from "three";
+import { useState } from "react";
+import { BookOpen, CalendarDays, Clock3, MapPin } from "lucide-react";
 
 export default function ThreeCanvas() {
-  const mountRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    setTilt({ x: (event.clientY - bounds.top - bounds.height / 2) / bounds.height, y: (event.clientX - bounds.left - bounds.width / 2) / bounds.width });
+  };
 
-  useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return;
-
-    // Scene setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      mount.clientWidth / mount.clientHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 5;
-
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(mount.clientWidth, mount.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    mount.appendChild(renderer.domElement);
-
-    // 3D Glass Structural Geometry (Icosahedron)
-    const geometry = new THREE.IcosahedronGeometry(1.8, 1);
-    const material = new THREE.MeshPhysicalMaterial({
-      color: 0xe0b0ff,
-      metalness: 0.1,
-      roughness: 0.2,
-      transmission: 0.9,
-      thickness: 1.2,
-      wireframe: false,
-      transparent: true,
-      opacity: 0.75,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-
-    // Wireframe Overlay
-    const wireframeMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.35,
-    });
-    const wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial);
-    scene.add(wireframeMesh);
-
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
-
-    const pointLight1 = new THREE.PointLight(0xe0b0ff, 3, 100);
-    pointLight1.position.set(5, 5, 5);
-    scene.add(pointLight1);
-
-    const pointLight2 = new THREE.PointLight(0x80d8ff, 3, 100);
-    pointLight2.position.set(-5, -5, 5);
-    scene.add(pointLight2);
-
-    // Particles Constellation
-    const particleCount = 200;
-    const particleGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-
-    for (let i = 0; i < particleCount * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 15;
-    }
-    particleGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3)
-    );
-
-    const particleMaterial = new THREE.PointsMaterial({
-      color: 0xe0b0ff,
-      size: 0.05,
-      transparent: true,
-      opacity: 0.6,
-    });
-    const particles = new THREE.Points(particleGeometry, particleMaterial);
-    scene.add(particles);
-
-    // Mouse Parallax Interaction
-    let mouseX = 0;
-    let mouseY = 0;
-
-    const onMouseMove = (event: MouseEvent) => {
-      mouseX = (event.clientX / window.innerWidth - 0.5) * 2;
-      mouseY = (event.clientY / window.innerHeight - 0.5) * 2;
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-
-    // Animation Loop
-    let animationFrameId: number;
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-
-      mesh.rotation.x += 0.005;
-      mesh.rotation.y += 0.008;
-      wireframeMesh.rotation.x += 0.005;
-      wireframeMesh.rotation.y += 0.008;
-      particles.rotation.y += 0.001;
-
-      // Smooth Mouse Parallax Rotation
-      mesh.rotation.y += (mouseX * 0.5 - mesh.rotation.y) * 0.05;
-      mesh.rotation.x += (mouseY * 0.5 - mesh.rotation.x) * 0.05;
-
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    // Resize Handler
-    const handleResize = () => {
-      if (!mount) return;
-      camera.aspect = mount.clientWidth / mount.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(mount.clientWidth, mount.clientHeight);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
-      if (mount && renderer.domElement) {
-        mount.removeChild(renderer.domElement);
-      }
-    };
-  }, []);
-
-  return <div ref={mountRef} className="w-full h-[380px] md:h-[480px] relative" />;
+  return (
+    <div className="scene-3d" onPointerMove={onPointerMove} onPointerLeave={() => setTilt({ x: 0, y: 0 })} style={{ "--tilt-x": `${tilt.x * -7}deg`, "--tilt-y": `${tilt.y * 9}deg` } as React.CSSProperties} role="img" aria-label="Three-dimensional model of a weekly class schedule">
+      <div className="scene-grid" />
+      <div className="scene-halo" />
+      <div className="scene-orbit scene-orbit-a" /><div className="scene-orbit scene-orbit-b" />
+      <div className="scene-card-shadow" />
+      <div className="scene-week-card">
+        <div className="scene-card-top"><span><i /> YOUR WEEK AT A GLANCE</span><CalendarDays size={14} /></div>
+        <div className="scene-date">MONDAY <strong>09</strong> <small>NOVEMBER</small></div>
+        <div className="scene-class scene-class-lime"><span>09:00 — 10:30</span><strong>Design systems</strong><small><MapPin size={10} /> STUDIO 204</small></div>
+        <div className="scene-class scene-class-blue"><span>11:00 — 12:00</span><strong>Human-computer interaction</strong><small><MapPin size={10} /> NORTH HALL</small></div>
+        <div className="scene-class scene-class-peach"><span>14:15 — 15:30</span><strong>Project workshop</strong><small><MapPin size={10} /> MAKER SPACE</small></div>
+        <div className="scene-card-foot"><span><Clock3 size={11} /> NEXT UP IN 24 MIN</span><BookOpen size={12} /></div>
+      </div>
+      <div className="scene-float scene-float-one"><span>WEEKLY FLOW</span><strong>06</strong><small>SESSIONS</small></div>
+      <div className="scene-float scene-float-two"><span className="scene-check">✓</span><div><strong>All in sync</strong><small>across your devices</small></div></div>
+      <div className="scene-depth-label">A WEEK, SPATIALLY CONSIDERED</div>
+    </div>
+  );
 }
