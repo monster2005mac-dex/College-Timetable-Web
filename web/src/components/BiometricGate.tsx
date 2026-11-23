@@ -85,7 +85,7 @@ export default function BiometricGate({ children }: { children: React.ReactNode 
           </div>
           <div className="space-y-2">
             <h1 id="biometric-lock-title" className="text-2xl font-bold text-white">Welcome back</h1>
-            <p className="text-sm text-white/65">Unlock this browser with your fingerprint, face, or device screen lock.</p>
+            <p className="text-sm text-white/65">Unlock this device&apos;s passkey with your fingerprint, face, or screen lock.</p>
           </div>
           {error && <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200" role="alert">{error}</p>}
           <button
@@ -95,7 +95,7 @@ export default function BiometricGate({ children }: { children: React.ReactNode 
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#b7f479] px-5 py-3 font-bold text-black transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-60"
           >
             <Fingerprint size={19} aria-hidden="true" />
-            {isUnlocking ? "Verifying…" : "Unlock with biometrics"}
+            {isUnlocking ? "Verifying…" : "Continue with device passkey"}
           </button>
           <button
             type="button"
@@ -103,7 +103,7 @@ export default function BiometricGate({ children }: { children: React.ReactNode 
             disabled={isUnlocking}
             className="text-xs text-white/55 underline decoration-white/25 underline-offset-4 hover:text-white disabled:opacity-50"
           >
-            Can&apos;t use this device? Remove its lock and sign out
+            Can&apos;t use the passkey? Turn off this device&apos;s lock and sign out
           </button>
         </section>
       </main>

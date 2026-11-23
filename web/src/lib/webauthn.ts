@@ -1,6 +1,7 @@
-type StoredBiometricCredential = {
+type StoredBiometricSetting = {
   userId: string;
-  credentialId: string;
+  enabled?: boolean;
+  credentialId?: string;
 };
 
 const DATABASE_NAME = "campus-orbit-device-lock";
@@ -43,6 +44,13 @@ function decodeCredentialId(value: string): ArrayBuffer {
   return credentialId;
 }
 
+function matchesUserHandle(userHandle: ArrayBuffer | null, userId: string): boolean {
+  if (!userHandle) return false;
+  const expected = new Uint8Array(encodeUserId(userId));
+  const actual = new Uint8Array(userHandle);
+  return expected.length === actual.length && expected.every((value, index) => value === actual[index]);
+}
+
 export async function checkDeviceBiometricAvailable(): Promise<boolean> {
   if (typeof window === "undefined" || !window.PublicKeyCredential) return false;
   try {
@@ -52,19 +60,23 @@ export async function checkDeviceBiometricAvailable(): Promise<boolean> {
   }
 }
 
-export async function isDeviceBiometricEnabled(userId: string): Promise<boolean> {
-  const database = await openCredentialDatabase();
-  return new Promise((resolve, reject) => {
+function readBiometricSetting(userId: string): Promise<StoredBiometricSetting | undefined> {
+  return openCredentialDatabase().then((database) => new Promise((resolve, reject) => {
     const request = database.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(userId);
     request.onsuccess = () => {
       database.close();
-      resolve(Boolean(request.result?.credentialId));
+      resolve(request.result as StoredBiometricSetting | undefined);
     };
     request.onerror = () => {
       database.close();
       reject(request.error ?? new Error("Could not read biometric settings."));
     };
-  });
+  }));
+}
+
+export async function isDeviceBiometricEnabled(userId: string): Promise<boolean> {
+  const setting = await readBiometricSetting(userId);
+  return Boolean(setting?.enabled || setting?.credentialId);
 }
 
 export async function registerDeviceBiometrics(userId: string, email: string, displayName: string): Promise<void> {
@@ -85,6 +97,8 @@ export async function registerDeviceBiometrics(userId: string, email: string, di
       pubKeyCredParams: [{ type: "public-key", alg: -7 }],
       authenticatorSelection: {
         authenticatorAttachment: "platform",
+        residentKey: "required",
+        requireResidentKey: true,
         userVerification: "required",
       },
       timeout: 60000,
@@ -99,7 +113,7 @@ export async function registerDeviceBiometrics(userId: string, email: string, di
   const database = await openCredentialDatabase();
   await new Promise<void>((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readwrite");
-    transaction.objectStore(STORE_NAME).put({ userId, credentialId: credential.id } satisfies StoredBiometricCredential);
+    transaction.objectStore(STORE_NAME).put({ userId, enabled: true } satisfies StoredBiometricSetting);
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error ?? new Error("Could not save biometric settings."));
     transaction.onabort = () => reject(transaction.error ?? new Error("Could not save biometric settings."));
@@ -111,29 +125,29 @@ export async function authenticateWithDeviceBiometrics(userId: string): Promise<
     throw new Error("Biometric authentication is not supported in this browser.");
   }
 
-  const database = await openCredentialDatabase();
-  const storedCredential = await new Promise<StoredBiometricCredential | undefined>((resolve, reject) => {
-    const request = database.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(userId);
-    request.onsuccess = () => resolve(request.result as StoredBiometricCredential | undefined);
-    request.onerror = () => reject(request.error ?? new Error("Could not read biometric settings."));
-  }).finally(() => database.close());
-
-  if (!storedCredential?.credentialId) {
-    throw new Error("No biometric credential is saved for this browser.");
+  const setting = await readBiometricSetting(userId);
+  if (!setting?.enabled && !setting?.credentialId) {
+    throw new Error("No device passkey is enabled for this account.");
   }
 
   const credential = await navigator.credentials.get({
     publicKey: {
       challenge: createChallenge(),
       rpId: window.location.hostname,
-      allowCredentials: [{ type: "public-key", id: decodeCredentialId(storedCredential.credentialId) }],
+      allowCredentials: setting.credentialId
+        ? [{ type: "public-key", id: decodeCredentialId(setting.credentialId) }]
+        : [],
       userVerification: "required",
       timeout: 60000,
     },
   });
 
-  if (!(credential instanceof PublicKeyCredential) || credential.id !== storedCredential.credentialId) {
-    throw new Error("The device could not verify the saved biometric credential.");
+  if (!(credential instanceof PublicKeyCredential) || !(credential.response instanceof AuthenticatorAssertionResponse)) {
+    throw new Error("Your device could not verify the passkey. Try again.");
+  }
+
+  if (setting.credentialId ? credential.id !== setting.credentialId : !matchesUserHandle(credential.response.userHandle, userId)) {
+    throw new Error("The selected device passkey does not match this signed-in account.");
   }
 }
 

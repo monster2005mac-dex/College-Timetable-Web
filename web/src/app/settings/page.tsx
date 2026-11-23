@@ -175,11 +175,11 @@ export default function SettingsPage() {
             <Fingerprint size={22} />
           </div>
           <div>
-            <h2 id="biometric-settings-title" className="text-lg font-bold text-white">Device biometric lock</h2>
+            <h2 id="biometric-settings-title" className="text-lg font-bold text-white">Remember this device</h2>
             <p className="mt-1 text-xs leading-5 text-white/70">
               {biometricEnabled
-                ? "This browser asks for your fingerprint, face, or device screen lock before showing your signed-in session after a reload or reopen."
-                : "Use your device’s fingerprint, face recognition, or screen lock to unlock this browser when you return."}
+                ? "Your device passkey unlocks your signed-in session after this app is reopened or refreshed."
+                : "Enroll a passkey with this device’s fingerprint, face recognition, or screen lock. Your device manages the passkey; this site stores only the lock preference."}
             </p>
           </div>
         </div>
@@ -195,11 +195,11 @@ export default function SettingsPage() {
             : biometricEnabled
               ? "Turn off biometric lock"
               : biometricSupported
-                ? "Set up fingerprint / face unlock"
-                : "Biometrics unavailable on this device"}
+                ? "Set up device passkey"
+                : "Device passkeys unavailable"}
         </button>
         <p className="text-[11px] leading-5 text-white/50">
-          This is a device-local convenience lock, not server-verified authentication. It does not replace Firebase sign-in or protect against someone who can modify this browser&apos;s site storage or code. Your biometric data stays with your device and is never sent to Campus Orbit.
+          Your device keeps the passkey; this site stores only whether the lock is enabled. Passkeys are scoped to this site&apos;s domain by browser security, and turning off the lock here does not remove the passkey from your device&apos;s passkey manager. This is a convenience lock, not server-verified authentication.
         </p>
         {biometricMessage && <p className="text-sm text-[#d7ffb5]" role="status">{biometricMessage}</p>}
         {biometricError && <p className="text-sm text-red-200" role="alert">{biometricError}</p>}
