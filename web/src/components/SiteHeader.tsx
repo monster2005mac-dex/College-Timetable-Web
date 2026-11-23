@@ -35,6 +35,7 @@ export default function SiteHeader() {
     router.push(`${href}?date=${date}`);
   };
   const [user, setUser] = useState<User | null>(null);
+  const [profileDisplayName, setProfileDisplayName] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [failedImageUrl, setFailedImageUrl] = useState("");
 
@@ -42,11 +43,13 @@ export default function SiteHeader() {
 
   useEffect(() => {
     if (!user) {
+      setProfileDisplayName("");
       setProfileImageUrl("");
       setFailedImageUrl("");
       return;
     }
     return subscribeUserProfile(user.uid, (profile) => {
+      setProfileDisplayName(profile.displayName ?? "");
       setProfileImageUrl(profile.profileImageUrl ?? "");
       setFailedImageUrl("");
     });
@@ -57,7 +60,8 @@ export default function SiteHeader() {
     : user?.photoURL && failedImageUrl !== user.photoURL
       ? user.photoURL
       : "";
-  const avatarInitial = (user?.displayName || user?.email || "Student").trim().charAt(0).toUpperCase() || "S";
+  const displayName = profileDisplayName || user?.displayName || user?.email?.split("@")[0] || "Student";
+  const avatarInitial = displayName.trim().charAt(0).toUpperCase() || "S";
 
   return (
     <header className="site-header">
@@ -88,7 +92,7 @@ export default function SiteHeader() {
             href="/profile"
             onClick={(event) => navigateWithDate(event, "/profile")}
             className="profile-nav-link"
-            aria-label={`Open ${user.displayName || user.email || "student"} profile`}
+            aria-label={`Open ${displayName} profile`}
             title="Profile"
           >
             <span className="profile-nav-avatar" aria-hidden="true">

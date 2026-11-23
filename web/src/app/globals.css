@@ -247,6 +247,20 @@ a { color: inherit; text-decoration: none; }
 .profile-save-button { margin-top: 20px; }
 .profile-save-button:disabled { cursor: wait; opacity: 0.65; }
 .profile-success { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; padding: 11px 12px; border: 1px solid rgba(183, 244, 121, 0.2); border-radius: 10px; background: rgba(183, 244, 121, 0.07); color: var(--lime); font-size: 10px; line-height: 1.5; }
+.profile-section-divider { height: 1px; margin: 27px 0; border: 0; background: rgba(255,255,255,.09); }
+.profile-name-form { margin-bottom: 2px; }
+.profile-export-card { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 20px; padding: 23px 26px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: linear-gradient(115deg, rgba(25,32,33,.9), rgba(16,21,23,.95)); }
+.profile-export-card h2 { margin: 0 0 6px; font-size: 14px; }
+.profile-export-card p { margin: 0; color: #929d96; font-size: 10px; line-height: 1.6; }
+.profile-export-button { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid rgba(183,244,121,.25); border-radius: 10px; color: var(--lime); background: rgba(183,244,121,.06); font-size: 10px; font-weight: 700; }
+.profile-export-button:hover:not(:disabled) { border-color: rgba(183,244,121,.5); background: rgba(183,244,121,.11); }
+.profile-export-button:disabled { cursor: wait; opacity: .6; }
+.event-progress { display: flex; align-items: center; gap: 9px; margin-top: 10px; }
+.event-progress-track { position: relative; width: min(100%, 260px); height: 5px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.09); }
+.event-progress-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8bbf5e, var(--lime)); transition: width .8s linear; }
+.event-progress.is-live .event-progress-fill { box-shadow: 0 0 10px rgba(183,244,121,.48); }
+.event-progress-status { flex: 0 0 auto; color: #849087; font: 7px 'DM Mono', monospace; letter-spacing: .08em; white-space: nowrap; }
+.event-progress.is-live .event-progress-status { color: var(--lime); }
 .auth-error { margin-bottom: 15px; padding: 11px 12px; border: 1px solid rgba(248, 113, 113, 0.28); border-radius: 10px; background: rgba(248, 113, 113, 0.08); color: #fecaca; font-size: 10px; line-height: 1.5; }
 .loading-state { min-height: 60vh; display: flex; align-items: center; justify-content: center; gap: 12px; color: #bac5bc; font-size: 12px; }
 .loading-orb { width: 10px; height: 10px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 16px var(--lime); animation: orbit-pulse 1.2s ease-in-out infinite alternate; }
@@ -308,6 +322,8 @@ a { color: inherit; text-decoration: none; }
   .nav-link { padding: 9px 8px; font-size: 10px; }
   .nav-link svg { width: 12px; height: 12px; }
   .profile-layout { grid-template-columns: 1fr; }
+  .profile-export-card { align-items: flex-start; flex-direction: column; gap: 15px; padding: 20px; }
+  .profile-export-button { width: 100%; }
   .profile-preview-card { min-height: 310px; }
   .profile-preview-orbit { top: 20px; width: 220px; height: 220px; }
   .profile-form-card { padding: 22px; }
@@ -333,6 +349,7 @@ a { color: inherit; text-decoration: none; }
   .calendar-legend { flex-wrap: wrap; }
   .calendar-event { grid-template-columns: 1fr 8px; }
   .event-time { grid-column: 1 / -1; }
+  .event-progress-track { width: 100%; }
 
   .site-header { gap: 12px; }
   .brand-name { font-size: 12px; }

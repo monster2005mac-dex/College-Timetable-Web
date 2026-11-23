@@ -4,9 +4,9 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { ArrowLeft, CheckCircle2, ImagePlus, Link2, UserRound } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, ImagePlus, Link2, UserRound } from "lucide-react";
 import { auth } from "@/lib/firebase";
-import { saveUserProfile, subscribeUserProfile } from "@/lib/firestore";
+import { getUserDataExport, saveUserProfile, subscribeUserProfile } from "@/lib/firestore";
 import { parseDriveImageLink } from "@/lib/profileImage";
 
 export default function ProfilePage() {
@@ -14,15 +14,19 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [driveUrl, setDriveUrl] = useState("");
+  const [profileName, setProfileName] = useState("");
   const [savedImageUrl, setSavedImageUrl] = useState("");
   const [failedImageUrl, setFailedImageUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setProfileName(currentUser?.displayName || currentUser?.email?.split("@")[0] || "Student");
       setAuthReady(true);
       if (!currentUser) router.replace("/login");
     });
@@ -38,18 +42,71 @@ export default function ProfilePage() {
 
     return subscribeUserProfile(user.uid, (profile) => {
       setDriveUrl(profile.profileDriveUrl ?? "");
+      setProfileName(profile.displayName || user.displayName || user.email?.split("@")[0] || "Student");
       setSavedImageUrl(profile.profileImageUrl ?? "");
       setFailedImageUrl("");
     });
   }, [user]);
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "Student";
+  const displayName = profileName || user?.displayName || user?.email?.split("@")[0] || "Student";
   const avatarInitial = displayName.trim().charAt(0).toUpperCase() || "S";
   const imageUrl = savedImageUrl && failedImageUrl !== savedImageUrl
     ? savedImageUrl
     : user?.photoURL && failedImageUrl !== user.photoURL
       ? user.photoURL
       : "";
+
+  const saveProfileName = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user || isSavingName) return;
+    const trimmedName = profileName.trim();
+    if (!trimmedName) {
+      setError("Enter a name to show on your profile.");
+      setMessage("");
+      return;
+    }
+
+    setIsSavingName(true);
+    setError("");
+    setMessage("");
+    try {
+      await saveUserProfile(user.uid, { displayName: trimmedName });
+      setProfileName(trimmedName);
+      setMessage("Display name saved.");
+    } catch {
+      setError("We couldn't save your display name. Please try again.");
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const downloadAllData = async () => {
+    if (!user || isExporting) return;
+    setIsExporting(true);
+    setError("");
+    setMessage("");
+    try {
+      const exportData = await getUserDataExport(user.uid);
+      const fileData = {
+        ...exportData,
+        account: { email: user.email, displayName },
+      };
+      const blob = new Blob([JSON.stringify(fileData, null, 2)], { type: "application/json" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `campus-orbit-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      setMessage("Your data export is ready.");
+    } catch {
+      setError("We couldn't export your data. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const saveProfileImage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -88,7 +145,7 @@ export default function ProfilePage() {
       <div className="profile-heading">
         <div className="eyebrow"><UserRound size={13} /> YOUR ACCOUNT</div>
         <h1>Make it <span>yours.</span></h1>
-        <p>Set the photo that appears in your Campus Orbit header.</p>
+        <p>Customize your profile and keep a copy of your Campus Orbit data.</p>
       </div>
 
       <div className="profile-layout">
@@ -111,12 +168,40 @@ export default function ProfilePage() {
 
         <section className="profile-form-card">
           <div className="profile-form-heading">
-            <div className="profile-form-icon"><ImagePlus size={17} /></div>
-            <div><h2>Profile photo</h2><p>Use an image shared from Google Drive.</p></div>
+            <div className="profile-form-icon"><UserRound size={17} /></div>
+            <div><h2>Profile details</h2><p>Choose the name shown across Campus Orbit.</p></div>
           </div>
 
           {message && <div className="profile-success" role="status"><CheckCircle2 size={15} />{message}</div>}
           {error && <div className="auth-error" role="alert">{error}</div>}
+
+          <form className="profile-name-form" onSubmit={saveProfileName}>
+            <label className="profile-field" htmlFor="profile-display-name">
+              Display name
+              <input
+                id="profile-display-name"
+                type="text"
+                autoComplete="name"
+                maxLength={60}
+                value={profileName}
+                onChange={(event) => {
+                  setProfileName(event.target.value);
+                  setMessage("");
+                  setError("");
+                }}
+              />
+            </label>
+            <button type="submit" className="button-primary profile-save-button" disabled={isSavingName || !profileName.trim()}>
+              {isSavingName ? "Saving…" : "Save name"}
+            </button>
+          </form>
+
+          <hr className="profile-section-divider" />
+
+          <div className="profile-form-heading">
+            <div className="profile-form-icon"><ImagePlus size={17} /></div>
+            <div><h2>Profile photo</h2><p>Use an image shared from Google Drive.</p></div>
+          </div>
 
           <form onSubmit={saveProfileImage}>
             <label className="profile-field" htmlFor="drive-photo-url">
@@ -144,6 +229,16 @@ export default function ProfilePage() {
           </form>
         </section>
       </div>
+
+      <section className="profile-export-card" aria-labelledby="profile-export-title">
+        <div>
+          <h2 id="profile-export-title">Save all your data</h2>
+          <p>Download your profile, schedule, attendance, and exam details as a private JSON file.</p>
+        </div>
+        <button type="button" className="profile-export-button" onClick={downloadAllData} disabled={isExporting}>
+          <Download size={14} /> {isExporting ? "Preparing export…" : "Download all data"}
+        </button>
+      </section>
     </div>
   );
 }
