@@ -23,7 +23,7 @@ function getEntriesForDate(entries: ClassEntry[], date: Date) {
   const dateEntries = entries.filter((entry) => entry.dateIso === dateIso);
   const overriddenIds = new Set(dateEntries.map((entry) => entry.overrideOfId).filter(Boolean));
   return [
-    ...entries.filter((entry) => !entry.dateIso && entry.day === weekday && !overriddenIds.has(entry.id)),
+    ...entries.filter((entry) => (entry.dateIso === undefined || entry.dateIso === null) && entry.day === weekday && !overriddenIds.has(entry.id)),
     ...dateEntries.filter((entry) => !entry.isCancelled),
   ];
 }

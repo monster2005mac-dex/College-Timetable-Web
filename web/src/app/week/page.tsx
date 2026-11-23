@@ -36,7 +36,7 @@ function entriesForDate(entries: ClassEntry[], date: Date) {
   const datedEntries = entries.filter((entry) => entry.dateIso === key);
   const hiddenRecurringIds = new Set(datedEntries.map((entry) => entry.overrideOfId).filter(Boolean));
   return [
-    ...entries.filter((entry) => !entry.dateIso && entry.day === weekday && !hiddenRecurringIds.has(entry.id)),
+    ...entries.filter((entry) => (entry.dateIso === undefined || entry.dateIso === null) && entry.day === weekday && !hiddenRecurringIds.has(entry.id)),
     ...datedEntries,
   ].sort((a, b) => a.startMin - b.startMin);
 }
