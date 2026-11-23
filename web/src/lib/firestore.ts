@@ -37,6 +37,23 @@ export interface ExamEntry {
   priority: string;
 }
 
+export interface UserProfile {
+  profileDriveUrl?: string;
+  profileImageUrl?: string;
+}
+
+export function subscribeUserProfile(userId: string, onUpdate: (profile: UserProfile) => void) {
+  const profileRef = doc(db, "users", userId, "profile", "details");
+  return onSnapshot(profileRef, (snapshot) => {
+    onUpdate(snapshot.exists() ? snapshot.data() as UserProfile : {});
+  });
+}
+
+export async function saveUserProfile(userId: string, profile: UserProfile) {
+  const profileRef = doc(db, "users", userId, "profile", "details");
+  await setDoc(profileRef, profile, { merge: true });
+}
+
 // Real-time Class Entries listener
 export function subscribeEntries(
   userId: string,
