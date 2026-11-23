@@ -34,8 +34,10 @@ import com.example.collegetimetable.ClassEntry
 import com.example.collegetimetable.GlassPanel
 import com.example.collegetimetable.classColors
 import com.example.collegetimetable.dayShort
+import com.example.collegetimetable.entriesForDate
 import com.example.collegetimetable.formatTime
 import dev.chrisbanes.haze.HazeState
+import java.time.LocalDate
 
 @Composable
 fun WeekGridScreen(
@@ -48,6 +50,8 @@ fun WeekGridScreen(
     val startHour = 8 // 8 AM
     val endHour = 20  // 8 PM
     val hourHeight = 56.dp
+    val today = LocalDate.now()
+    val monday = today.minusDays((today.dayOfWeek.value - 1).toLong())
 
     Column(
         modifier = Modifier
@@ -135,7 +139,7 @@ fun WeekGridScreen(
                         // 7 Day Columns
                         Row(modifier = Modifier.weight(1f)) {
                             (1..7).forEach { dayNum ->
-                                val dayEntries = entries.filter { it.day == dayNum }
+                                val dayEntries = entriesForDate(entries, monday.plusDays((dayNum - 1).toLong()))
 
                                 Box(
                                     modifier = Modifier

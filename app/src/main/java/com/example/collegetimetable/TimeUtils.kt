@@ -122,8 +122,7 @@ fun getWeekInfo(
 
     val days = (0 until 7).map { offset ->
         val date = startOfWeek.plusDays(offset.toLong())
-        val dayVal = date.dayOfWeek.value // 1=Mon ... 7=Sun
-        val dayEntries = entries.filter { it.day == dayVal }
+        val dayEntries = entriesForDate(entries, date)
         val colors = dayEntries.take(3).map { classColors[it.colorIndex % classColors.size] }
 
         WeekDayInfo(

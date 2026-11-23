@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
@@ -15,20 +16,27 @@ object AlarmScheduler {
     fun scheduleReminder(context: Context, entry: ClassEntry, leadMinutes: Int = 10, is24Hour: Boolean = false) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        val now = LocalDateTime.now()
-        val targetDayOfWeek = DayOfWeek.of(entry.day) // 1=Mon ... 7=Sun
+        if (entry.isCancelled) {
+            cancelReminder(context, entry.id)
+            return
+        }
 
+        val now = LocalDateTime.now()
         val startHour = entry.startMin / 60
         val startMinute = entry.startMin % 60
-
-        var triggerDateTime = now.with(TemporalAdjusters.nextOrSame(targetDayOfWeek))
-            .withHour(startHour)
-            .withMinute(startMinute)
-            .withSecond(0)
-            .minusMinutes(leadMinutes.toLong())
-
-        if (triggerDateTime.isBefore(now)) {
-            triggerDateTime = triggerDateTime.plusWeeks(1)
+        val triggerDateTime = if (entry.dateIso != null) {
+            val date = runCatching { LocalDate.parse(entry.dateIso) }.getOrNull() ?: return
+            date.atTime(startHour, startMinute).minusMinutes(leadMinutes.toLong())
+                .takeIf { !it.isBefore(now) } ?: return
+        } else {
+            val targetDayOfWeek = DayOfWeek.of(entry.day) // 1=Mon ... 7=Sun
+            var nextTrigger = now.with(TemporalAdjusters.nextOrSame(targetDayOfWeek))
+                .withHour(startHour)
+                .withMinute(startMinute)
+                .withSecond(0)
+                .minusMinutes(leadMinutes.toLong())
+            if (nextTrigger.isBefore(now)) nextTrigger = nextTrigger.plusWeeks(1)
+            nextTrigger
         }
 
         val triggerMillis = triggerDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()

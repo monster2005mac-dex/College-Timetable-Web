@@ -51,6 +51,7 @@ import com.example.collegetimetable.components.CurrentWeekStrip
 import com.example.collegetimetable.components.HeroNowCard
 import com.example.collegetimetable.components.TimelineClassCard
 import com.example.collegetimetable.dayNames
+import com.example.collegetimetable.entriesForDate
 import com.example.collegetimetable.getClassProgressStatus
 import com.example.collegetimetable.getHeroStatus
 import dev.chrisbanes.haze.HazeState
@@ -100,7 +101,7 @@ fun TodayScreen(
         }
     }
 
-    val todayEntries = entries.filter { it.day == todayVal }
+    val todayEntries = entriesForDate(entries, currentDateTime.toLocalDate())
     val todayCompletedCount = todayEntries.count { nowMin >= it.endMin }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -129,7 +130,9 @@ fun TodayScreen(
             modifier = Modifier.weight(1f)
         ) { pageIndex ->
             val dayVal = pageIndex + 1
-            val dayEntries = entries.filter { it.day == dayVal }.sortedBy { it.startMin }
+            val monday = currentDateTime.toLocalDate().minusDays((currentDateTime.dayOfWeek.value - 1).toLong())
+            val pageDate = monday.plusDays((dayVal - 1).toLong())
+            val dayEntries = entriesForDate(entries, pageDate)
             val isSelectedToday = dayVal == todayVal
 
             LazyColumn(

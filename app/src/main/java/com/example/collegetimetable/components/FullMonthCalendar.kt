@@ -50,6 +50,7 @@ import com.example.collegetimetable.ExamEntry
 import com.example.collegetimetable.GlassPanel
 import com.example.collegetimetable.classColors
 import com.example.collegetimetable.dayShort
+import com.example.collegetimetable.entriesForDate
 import com.example.collegetimetable.formatTime
 import dev.chrisbanes.haze.HazeState
 import java.time.DayOfWeek
@@ -170,8 +171,7 @@ fun FullMonthCalendarDialog(
                                     val isSelected = date.isEqual(selectedDate)
                                     val isToday = date.isEqual(today)
 
-                                    val dayVal = date.dayOfWeek.value
-                                    val dayClasses = entries.filter { it.day == dayVal }
+                                    val dayClasses = entriesForDate(entries, date)
                                     val dayExams = exams.filter { it.dateIso == date.toString() }
 
                                     Box(
@@ -250,8 +250,7 @@ fun FullMonthCalendarDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // Date Agenda Section
-                val selectedDayVal = selectedDate.dayOfWeek.value
-                val dateClasses = entries.filter { it.day == selectedDayVal }.sortedBy { it.startMin }
+                val dateClasses = entriesForDate(entries, selectedDate)
                 val dateExams = exams.filter { it.dateIso == selectedDate.toString() }
 
                 Text(

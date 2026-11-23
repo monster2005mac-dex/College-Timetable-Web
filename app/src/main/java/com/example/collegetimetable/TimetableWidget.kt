@@ -61,10 +61,10 @@ class TimetableWidget : GlanceAppWidget() {
         val entries = repo.loadAllSafe(context)
         val attendance = attendanceRepo.loadAll()
 
-        val todayVal = LocalDate.now().dayOfWeek.value
+        val today = LocalDate.now()
         val nowMin = LocalTime.now().let { it.hour * 60 + it.minute }
 
-        val todayEntries = entries.filter { it.day == todayVal }.sortedBy { it.startMin }
+        val todayEntries = entriesForDate(entries, today)
         val ongoing = todayEntries.firstOrNull { nowMin in it.startMin until it.endMin }
         val next = todayEntries.firstOrNull { nowMin < it.startMin }
 

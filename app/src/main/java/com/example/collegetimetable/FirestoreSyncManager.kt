@@ -63,7 +63,10 @@ object FirestoreSyncManager {
             "day" to entry.day,
             "startMin" to entry.startMin,
             "endMin" to entry.endMin,
-            "colorIndex" to entry.colorIndex
+            "colorIndex" to entry.colorIndex,
+            "dateIso" to entry.dateIso,
+            "overrideOfId" to entry.overrideOfId,
+            "isCancelled" to entry.isCancelled
         )
         db.collection("users").document(user.uid)
             .collection("entries").document(entry.id)
@@ -134,6 +137,9 @@ object FirestoreSyncManager {
                     val startMin = doc.getLong("startMin")?.toInt() ?: 540
                     val endMin = doc.getLong("endMin")?.toInt() ?: 600
                     val colorIndex = doc.getLong("colorIndex")?.toInt() ?: 0
+                    val dateIso = doc.getString("dateIso")
+                    val overrideOfId = doc.getString("overrideOfId")
+                    val isCancelled = doc.getBoolean("isCancelled") ?: false
 
                     ClassEntry(
                         id = id,
@@ -143,7 +149,10 @@ object FirestoreSyncManager {
                         day = day,
                         startMin = startMin,
                         endMin = endMin,
-                        colorIndex = colorIndex
+                        colorIndex = colorIndex,
+                        dateIso = dateIso,
+                        overrideOfId = overrideOfId,
+                        isCancelled = isCancelled
                     )
                 }
                 onEntriesUpdated(list)

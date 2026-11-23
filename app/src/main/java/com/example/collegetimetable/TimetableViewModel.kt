@@ -13,13 +13,23 @@ class TimetableViewModel(app: Application) : AndroidViewModel(app) {
     val entries: StateFlow<List<ClassEntry>> = _entries.asStateFlow()
 
     /** Returns another class on the same day whose time overlaps the candidate, if any. */
-    fun findConflict(candidate: ClassEntry): ClassEntry? =
-        _entries.value.firstOrNull {
-            it.id != candidate.id &&
-                it.day == candidate.day &&
-                candidate.startMin < it.endMin &&
-                it.startMin < candidate.endMin
+    fun findConflict(candidate: ClassEntry): ClassEntry? {
+        val possibleConflicts = candidate.dateIso?.let { dateIso ->
+            runCatching { java.time.LocalDate.parse(dateIso) }
+                .getOrNull()
+                ?.let { date -> entriesForDate(_entries.value, date) }
+                .orEmpty()
+        } ?: _entries.value.filter {
+            it.dateIso == null && it.day == candidate.day && !it.isCancelled
         }
+
+        return possibleConflicts.firstOrNull { existing ->
+            existing.id != candidate.id &&
+                existing.id != candidate.overrideOfId &&
+                candidate.startMin < existing.endMin &&
+                existing.startMin < candidate.endMin
+        }
+    }
 
     fun upsert(entry: ClassEntry) {
         val list = _entries.value.toMutableList()

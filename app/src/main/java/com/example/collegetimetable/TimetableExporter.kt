@@ -20,36 +20,64 @@ object TimetableExporter {
 
         val today = LocalDate.now()
 
-        entries.forEach { entry ->
-            val dayOfWeek = try { DayOfWeek.of(entry.day) } catch (_: Exception) { DayOfWeek.MONDAY }
-            val nextDate = today.with(TemporalAdjusters.nextOrSame(dayOfWeek))
+        val overridesByOriginal = entries
+            .filter { it.dateIso != null && it.overrideOfId != null }
+            .groupBy { it.overrideOfId }
 
+        entries.forEach { entry ->
+            if (entry.isCancelled) return@forEach
+            val eventDate = entry.dateIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            if (entry.dateIso != null && eventDate == null) return@forEach
+            val isOneOff = eventDate != null
+            val date = eventDate ?: run {
+                val dayOfWeek = try { DayOfWeek.of(entry.day) } catch (_: Exception) { DayOfWeek.MONDAY }
+                today.with(TemporalAdjusters.nextOrSame(dayOfWeek))
+            }
+            val baseEntry = entry.overrideOfId?.let { originalId -> entries.firstOrNull { it.id == originalId } }
             val startH = entry.startMin / 60
             val startM = entry.startMin % 60
             val endH = entry.endMin / 60
             val endM = entry.endMin % 60
 
-            val dateStr = nextDate.toString().replace("-", "")
+            val dateStr = date.toString().replace("-", "")
             val dtStart = "%sT%02d%02d00".format(dateStr, startH, startM)
             val dtEnd = "%sT%02d%02d00".format(dateStr, endH, endM)
 
-            val rruleDay = when (entry.day) {
-                1 -> "MO"
-                2 -> "TU"
-                3 -> "WE"
-                4 -> "TH"
-                5 -> "FR"
-                6 -> "SA"
-                else -> "SU"
-            }
-
             sb.append("BEGIN:VEVENT\n")
+            sb.append("UID:${baseEntry?.id ?: entry.id}@collegetimetable\n")
             sb.append("SUMMARY:${entry.subject}\n")
             if (entry.room.isNotEmpty()) sb.append("LOCATION:${entry.room}\n")
             if (entry.teacher.isNotEmpty()) sb.append("DESCRIPTION:Instructor: ${entry.teacher}\n")
             sb.append("DTSTART:$dtStart\n")
             sb.append("DTEND:$dtEnd\n")
-            sb.append("RRULE:FREQ=WEEKLY;BYDAY=$rruleDay\n")
+
+            if (baseEntry != null) {
+                val recurrenceId = "%sT%02d%02d00".format(
+                    dateStr,
+                    baseEntry.startMin / 60,
+                    baseEntry.startMin % 60
+                )
+                sb.append("RECURRENCE-ID:$recurrenceId\n")
+            } else if (!isOneOff) {
+                val rruleDay = when (entry.day) {
+                    1 -> "MO"
+                    2 -> "TU"
+                    3 -> "WE"
+                    4 -> "TH"
+                    5 -> "FR"
+                    6 -> "SA"
+                    else -> "SU"
+                }
+                sb.append("RRULE:FREQ=WEEKLY;BYDAY=$rruleDay\n")
+                overridesByOriginal[entry.id].orEmpty().forEach overrideLoop@{ override ->
+                    val overrideDate = runCatching { LocalDate.parse(override.dateIso) }.getOrNull() ?: return@overrideLoop
+                    sb.append("EXDATE:%sT%02d%02d00\n".format(
+                        overrideDate.toString().replace("-", ""),
+                        entry.startMin / 60,
+                        entry.startMin % 60
+                    ))
+                }
+            }
             sb.append("END:VEVENT\n")
         }
 
@@ -83,6 +111,9 @@ object TimetableExporter {
                     .put("startMin", e.startMin)
                     .put("endMin", e.endMin)
                     .put("colorIndex", e.colorIndex)
+                    .put("dateIso", e.dateIso)
+                    .put("overrideOfId", e.overrideOfId)
+                    .put("isCancelled", e.isCancelled)
             )
         }
         val intent = Intent(Intent.ACTION_SEND).apply {

@@ -1,6 +1,7 @@
 package com.example.collegetimetable
 
 import androidx.compose.ui.graphics.Color
+import java.time.LocalDate
 import java.util.UUID
 
 /** One class slot. day: 1 = Monday ... 7 = Sunday. Times are minutes since midnight. */
@@ -12,8 +13,25 @@ data class ClassEntry(
     val day: Int,
     val startMin: Int,
     val endMin: Int,
-    val colorIndex: Int
+    val colorIndex: Int,
+    val dateIso: String? = null,
+    val overrideOfId: String? = null,
+    val isCancelled: Boolean = false
 )
+
+fun entriesForDate(entries: List<ClassEntry>, date: LocalDate): List<ClassEntry> {
+    val dateIso = date.toString()
+    val datedEntries = entries.filter { it.dateIso == dateIso }
+    val overriddenIds = datedEntries.mapNotNull { it.overrideOfId }.toSet()
+
+    return entries.filter { entry ->
+        if (entry.dateIso != null) {
+            entry.dateIso == dateIso && !entry.isCancelled
+        } else {
+            entry.day == date.dayOfWeek.value && entry.id !in overriddenIds && !entry.isCancelled
+        }
+    }.sortedBy { it.startMin }
+}
 
 val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 val dayShort = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
