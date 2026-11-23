@@ -4,6 +4,8 @@ import {
   onSnapshot,
   setDoc,
   deleteDoc,
+  getDoc,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -38,6 +40,7 @@ export interface ExamEntry {
 }
 
 export interface UserProfile {
+  displayName?: string;
   profileDriveUrl?: string;
   profileImageUrl?: string;
 }
@@ -52,6 +55,24 @@ export function subscribeUserProfile(userId: string, onUpdate: (profile: UserPro
 export async function saveUserProfile(userId: string, profile: UserProfile) {
   const profileRef = doc(db, "users", userId, "profile", "details");
   await setDoc(profileRef, profile, { merge: true });
+}
+
+export async function getUserDataExport(userId: string) {
+  const userCollection = (name: string) => collection(db, "users", userId, name);
+  const [profileSnapshot, entriesSnapshot, attendanceSnapshot, examsSnapshot] = await Promise.all([
+    getDoc(doc(db, "users", userId, "profile", "details")),
+    getDocs(userCollection("entries")),
+    getDocs(userCollection("attendance")),
+    getDocs(userCollection("exams")),
+  ]);
+
+  return {
+    exportedAt: new Date().toISOString(),
+    profile: profileSnapshot.exists() ? profileSnapshot.data() : {},
+    schedule: entriesSnapshot.docs.map((entry) => ({ ...entry.data(), id: entry.id })),
+    attendance: attendanceSnapshot.docs.map((record) => ({ ...record.data(), id: record.id })),
+    exams: examsSnapshot.docs.map((exam) => ({ ...exam.data(), id: exam.id })),
+  };
 }
 
 // Real-time Class Entries listener

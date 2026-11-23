@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { ClassEntry, ExamEntry, subscribeEntries, subscribeExams } from "@/lib/firestore";
-import { formatMinutes } from "@/lib/useCurrentTime";
+import { formatMinutes, useCurrentTime } from "@/lib/useCurrentTime";
+import EventProgressBar from "@/components/EventProgressBar";
 
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -85,6 +86,7 @@ export default function CalendarPage() {
     }),
     [calendarCellCount, leadingDays, daysInMonth]
   );
+  const now = useCurrentTime();
   const selectedDateKey = toLocalDateString(selectedDate);
   const selectedEntries = getEntriesForDate(entries, selectedDate)
     .sort((a, b) => a.startMin - b.startMin);
@@ -163,7 +165,7 @@ export default function CalendarPage() {
             {selectedEntries.map((entry) => (
               <article className="calendar-event" key={entry.id}>
                 <span className="event-time">{formatMinutes(entry.startMin)} – {formatMinutes(entry.endMin)}</span>
-                <div><h3>{entry.subject}</h3><p>{[entry.room && `Room ${entry.room}`, entry.teacher].filter(Boolean).join(" · ") || "Class"}</p></div>
+                <div className="calendar-event-info"><h3>{entry.subject}</h3><p>{[entry.room && `Room ${entry.room}`, entry.teacher].filter(Boolean).join(" · ") || "Class"}</p><EventProgressBar subject={entry.subject} eventDate={selectedDateKey} startMin={entry.startMin} endMin={entry.endMin} now={now} /></div>
                 <i className="class-marker" aria-hidden="true" />
               </article>
             ))}
