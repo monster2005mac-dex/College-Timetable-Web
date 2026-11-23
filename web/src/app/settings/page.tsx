@@ -5,6 +5,13 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { exportTimetableIcs } from "@/lib/exportIcs";
+import { Fingerprint } from "lucide-react";
+import {
+  checkDeviceBiometricAvailable,
+  isDeviceBiometricEnabled,
+  registerDeviceBiometrics,
+  removeDeviceBiometrics,
+} from "@/lib/webauthn";
 import {
   AttendanceRecord,
   ClassEntry,
@@ -25,6 +32,11 @@ export default function SettingsPage() {
   const [hasSavedProfile, setHasSavedProfile] = useState(false);
   const [is24Hour, setIs24Hour] = useState(false);
   const [reminders, setReminders] = useState(true);
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [isUpdatingBiometrics, setIsUpdatingBiometrics] = useState(false);
+  const [biometricMessage, setBiometricMessage] = useState("");
+  const [biometricError, setBiometricError] = useState("");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isClearingData, setIsClearingData] = useState(false);
   const [clearDataMessage, setClearDataMessage] = useState("");
@@ -38,6 +50,28 @@ export default function SettingsPage() {
     });
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    if (!user) {
+      setBiometricSupported(false);
+      setBiometricEnabled(false);
+      return;
+    }
+
+    let active = true;
+    Promise.all([
+      checkDeviceBiometricAvailable(),
+      isDeviceBiometricEnabled(user.uid).catch(() => false),
+    ]).then(([supported, enabled]) => {
+      if (!active) return;
+      setBiometricSupported(supported);
+      setBiometricEnabled(enabled);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -61,6 +95,28 @@ export default function SettingsPage() {
     if (isClearDialogOpen && !dialog.open) dialog.showModal();
     if (!isClearDialogOpen && dialog.open) dialog.close();
   }, [isClearDialogOpen]);
+
+  const updateBiometricLock = async () => {
+    if (!user || isUpdatingBiometrics) return;
+    setIsUpdatingBiometrics(true);
+    setBiometricError("");
+    setBiometricMessage("");
+    try {
+      if (biometricEnabled) {
+        await removeDeviceBiometrics(user.uid);
+        setBiometricEnabled(false);
+        setBiometricMessage("Device biometric unlock is turned off for this browser.");
+      } else {
+        await registerDeviceBiometrics(user.uid, user.email ?? "", user.displayName ?? "");
+        setBiometricEnabled(true);
+        setBiometricMessage("Device biometric unlock is enabled. You’ll be asked to unlock after this app is reopened or refreshed.");
+      }
+    } catch (error) {
+      setBiometricError(error instanceof Error ? error.message : "Could not update biometric settings.");
+    } finally {
+      setIsUpdatingBiometrics(false);
+    }
+  };
 
   const clearCloudData = async () => {
     if (!user || isClearingData) return;
@@ -112,6 +168,42 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <section className="glass-panel space-y-4 p-6" aria-labelledby="biometric-settings-title">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl border border-[#b7f479]/25 bg-[#b7f479]/10 p-3 text-[#b7f479]" aria-hidden="true">
+            <Fingerprint size={22} />
+          </div>
+          <div>
+            <h2 id="biometric-settings-title" className="text-lg font-bold text-white">Device biometric lock</h2>
+            <p className="mt-1 text-xs leading-5 text-white/70">
+              {biometricEnabled
+                ? "This browser asks for your fingerprint, face, or device screen lock before showing your signed-in session after a reload or reopen."
+                : "Use your device’s fingerprint, face recognition, or screen lock to unlock this browser when you return."}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={updateBiometricLock}
+          disabled={!user || !biometricSupported || isUpdatingBiometrics}
+          aria-pressed={biometricEnabled}
+          className="rounded-full bg-[#b7f479] px-5 py-3 text-xs font-extrabold text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isUpdatingBiometrics
+            ? "Updating…"
+            : biometricEnabled
+              ? "Turn off biometric lock"
+              : biometricSupported
+                ? "Set up fingerprint / face unlock"
+                : "Biometrics unavailable on this device"}
+        </button>
+        <p className="text-[11px] leading-5 text-white/50">
+          This is a device-local convenience lock, not server-verified authentication. It does not replace Firebase sign-in or protect against someone who can modify this browser&apos;s site storage or code. Your biometric data stays with your device and is never sent to Campus Orbit.
+        </p>
+        {biometricMessage && <p className="text-sm text-[#d7ffb5]" role="status">{biometricMessage}</p>}
+        {biometricError && <p className="text-sm text-red-200" role="alert">{biometricError}</p>}
+      </section>
 
       {clearDataMessage && <p className="rounded-xl border border-[#b7f479]/30 bg-[#b7f479]/10 p-4 text-sm text-[#d7ffb5]" role="status">{clearDataMessage}</p>}
       {clearDataError && <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200" role="alert">{clearDataError}</p>}

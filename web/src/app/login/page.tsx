@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { checkDeviceBiometricAvailable, authenticateWithDeviceBiometrics } from "@/lib/webauthn";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,11 +11,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasBiometrics, setHasBiometrics] = useState(false);
-
-  useEffect(() => {
-    checkDeviceBiometricAvailable().then(setHasBiometrics);
-  }, []);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -25,18 +19,6 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google");
-    }
-  };
-
-  const handleDeviceBiometricAuth = async () => {
-    try {
-      setError(null);
-      const success = await authenticateWithDeviceBiometrics(email);
-      if (success) {
-        router.push("/dashboard");
-      }
-    } catch (err: any) {
-      setError(err.message || "Device biometric authentication failed");
     }
   };
 
@@ -81,14 +63,6 @@ export default function LoginPage() {
             <span>Sign in with Google</span>
           </button>
 
-          {hasBiometrics && (
-            <button
-              onClick={handleDeviceBiometricAuth}
-              className="w-full py-3 px-4 rounded-xl glass-button text-white font-bold flex items-center justify-center space-x-3 text-sm"
-            >
-              <span>Sign in with device biometrics (Touch ID / Face ID / Windows Hello)</span>
-            </button>
-          )}
         </div>
 
         <div className="relative flex items-center justify-center my-4">
