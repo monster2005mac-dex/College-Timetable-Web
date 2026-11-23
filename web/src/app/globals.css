@@ -489,6 +489,10 @@ a { color: inherit; text-decoration: none; }
 .week-editor-actions { display: flex; justify-content: flex-end; gap: 9px; padding-top: 8px; }
 .week-cancel-button { min-height: 40px; padding: 0 15px; border: 1px solid var(--line); border-radius: 10px; color: var(--foreground); background: transparent; font-size: 10px; }
 .week-save-button:disabled { cursor: not-allowed; opacity: .55; }
+.week-repeat-option { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.025); }
+.week-repeat-option input { width: 16px; min-height: 16px; margin: 0; accent-color: var(--lime); }
+.week-repeat-option label { color: #bdc7be; font-size: 10px; }
+.week-step-button:disabled, .week-today-button:disabled, .icon-action:disabled { cursor: not-allowed; opacity: .45; }
 
 @media (max-width: 760px) {
   .dated-week-heading { align-items: flex-start; flex-direction: column; padding: 19px; }
