@@ -6,6 +6,7 @@ import {
   deleteDoc,
   getDoc,
   getDocs,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -73,6 +74,24 @@ export async function getUserDataExport(userId: string) {
     attendance: attendanceSnapshot.docs.map((record) => ({ ...record.data(), id: record.id })),
     exams: examsSnapshot.docs.map((exam) => ({ ...exam.data(), id: exam.id })),
   };
+}
+
+export async function clearUserFirestoreData(userId: string) {
+  const userPath = ["users", userId] as const;
+  const collectionNames = ["entries", "attendance", "exams", "profile"] as const;
+
+  for (const collectionName of collectionNames) {
+    const snapshot = await getDocs(collection(db, ...userPath, collectionName));
+    for (let offset = 0; offset < snapshot.docs.length; offset += 450) {
+      const batch = writeBatch(db);
+      snapshot.docs.slice(offset, offset + 450).forEach((userDocument) => {
+        batch.delete(userDocument.ref);
+      });
+      await batch.commit();
+    }
+  }
+
+  await deleteDoc(doc(db, ...userPath));
 }
 
 // Real-time Class Entries listener

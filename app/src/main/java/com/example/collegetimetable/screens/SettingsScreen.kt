@@ -74,6 +74,7 @@ fun SettingsScreen(
     onRemindersToggled: (Boolean) -> Unit,
     onReminderLeadMinutesSelected: (Int) -> Unit,
     onOpenAuthClicked: () -> Unit,
+    isResettingData: Boolean,
     onResetAllDataClicked: () -> Unit
 ) {
     var showResetDialog by remember { mutableStateOf(false) }
@@ -519,7 +520,7 @@ fun SettingsScreen(
             glassColor = GlassErrorColor,
             glassAlphaTop = 0.25f,
             glassAlphaBottom = 0.12f,
-            onClick = { showResetDialog = true }
+            onClick = { if (!isResettingData) showResetDialog = true }
         ) {
             Row(
                 modifier = Modifier
@@ -551,7 +552,7 @@ fun SettingsScreen(
                         color = OnGlassErrorColor
                     )
                     Text(
-                        text = "Clear all classes, attendance & exams to start fresh",
+                        text = if (currentUser != null) "Clear this device and your signed-in Firestore data" else "Clear all timetable data stored on this device",
                         style = MaterialTheme.typography.bodySmall,
                         fontSize = 11.sp,
                         color = Color.White.copy(alpha = 0.8f)
@@ -576,7 +577,11 @@ fun SettingsScreen(
             },
             text = {
                 Text(
-                    text = "This will permanently delete all class schedule slots, attendance records, exam deadlines, and app settings to make the app brand-new.",
+                    text = if (currentUser != null) {
+                        "This permanently deletes your classes, attendance, exams, and profile details from Firestore for ${currentUser.email}, then clears app settings on this device. Your sign-in remains active."
+                    } else {
+                        "This clears classes, attendance, exams, and app settings stored on this device. Sign in to also clear your Firestore data."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.85f)
                 )
@@ -586,14 +591,14 @@ fun SettingsScreen(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(GlassErrorColor)
-                        .clickable {
+                        .clickable(enabled = !isResettingData) {
                             showResetDialog = false
                             onResetAllDataClicked()
                         }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = "Reset Everything ⚠️",
+                        text = if (isResettingData) "Clearing data…" else "Reset Everything ⚠️",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -601,7 +606,7 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
+                TextButton(onClick = { showResetDialog = false }, enabled = !isResettingData) {
                     Text("Cancel", color = Color.White.copy(alpha = 0.7f))
                 }
             }

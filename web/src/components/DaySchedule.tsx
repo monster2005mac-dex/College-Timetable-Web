@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CalendarDays, Clock3, LogOut, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { ClassEntry, deleteEntry, saveEntry, subscribeEntries } from "@/lib/firestore";
-import { formatMinutes, useCurrentTime } from "@/lib/useCurrentTime";
+import { formatMinutes } from "@/lib/useCurrentTime";
 import EventProgressBar from "@/components/EventProgressBar";
 
 function dateKey(date: Date) {
@@ -83,7 +83,6 @@ export default function DaySchedule() {
     setDateReady(true);
   }, []);
 
-  const now = useCurrentTime();
   const selectedKey = dateKey(selectedDate);
   const selectedEntries = entriesForDate(entries, selectedDate);
   const weekday = ((selectedDate.getDay() + 6) % 7) + 1;
@@ -252,7 +251,7 @@ export default function DaySchedule() {
                   <div className="dated-class-info">
                     <h3>{entry.subject}</h3>
                     <p>{entry.isCancelled ? "This weekly class is hidden on this date" : [entry.room && `Room ${entry.room}`, entry.teacher].filter(Boolean).join(" · ") || "Class on your schedule"}</p>
-                    {!entry.isCancelled && <EventProgressBar subject={entry.subject} eventDate={selectedKey} startMin={entry.startMin} endMin={entry.endMin} now={now} />}
+                    {!entry.isCancelled && <EventProgressBar subject={entry.subject} eventDate={selectedKey} startMin={entry.startMin} endMin={entry.endMin} />}
                   </div>
                   <span className={`occurrence-badge ${entry.isCancelled ? "is-cancelled-badge" : isOverride ? "is-edited" : isOneOff ? "is-oneoff" : ""}`}>{entry.isCancelled ? "Removed for date" : isOverride ? "Date edited" : isOneOff ? "One-time" : "Weekly"}</span>
                   <div className="dated-class-actions">

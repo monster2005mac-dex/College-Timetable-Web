@@ -2,12 +2,56 @@ package com.example.collegetimetable
 
 import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 
 object FirestoreSyncManager {
 
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
     private val db: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
+    fun clearCurrentUserData(onComplete: (Exception?) -> Unit) {
+        val user = auth.currentUser
+        if (user == null) {
+            onComplete(null)
+            return
+        }
+
+        val userDocument = db.collection("users").document(user.uid)
+        val collectionNames = listOf("entries", "attendance", "exams", "profile")
+        val documents = mutableListOf<DocumentReference>()
+
+        fun deleteBatch(offset: Int) {
+            if (offset >= documents.size) {
+                onComplete(null)
+                return
+            }
+
+            val batch = db.batch()
+            val nextOffset = minOf(offset + 450, documents.size)
+            documents.subList(offset, nextOffset).forEach { document -> batch.delete(document) }
+            batch.commit()
+                .addOnSuccessListener { deleteBatch(nextOffset) }
+                .addOnFailureListener(onComplete)
+        }
+
+        fun readCollection(index: Int) {
+            if (index >= collectionNames.size) {
+                documents.add(userDocument)
+                deleteBatch(0)
+                return
+            }
+
+            userDocument.collection(collectionNames[index]).get()
+                .addOnSuccessListener { snapshot ->
+                    documents.addAll(snapshot.documents.map { it.reference })
+                    readCollection(index + 1)
+                }
+                .addOnFailureListener(onComplete)
+        }
+
+        readCollection(0)
+    }
 
     fun syncEntriesToCloud(context: Context, entry: ClassEntry) {
         val user = auth.currentUser ?: return

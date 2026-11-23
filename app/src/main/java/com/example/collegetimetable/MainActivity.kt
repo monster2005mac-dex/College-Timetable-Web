@@ -123,6 +123,7 @@ fun TimetableApp(
 
     var attendanceRecords by remember { mutableStateOf(attendanceRepo.loadAll()) }
     var exams by remember { mutableStateOf(examRepo.loadAll()) }
+    var isResettingData by remember { mutableStateOf(false) }
 
     val prefs = remember { context.getSharedPreferences("app_settings_prefs", Context.MODE_PRIVATE) }
 
@@ -482,27 +483,41 @@ fun TimetableApp(
                                 onRemindersToggled = { remindersEnabled = it },
                                 onReminderLeadMinutesSelected = { reminderLeadMinutes = it },
                                 onOpenAuthClicked = { showAuthDialog = true },
+                                isResettingData = isResettingData,
                                 onResetAllDataClicked = {
-                                    AlarmScheduler.cancelAll(context, entries)
-                                    entries.forEach { FirestoreSyncManager.deleteEntryFromCloud(it.id) }
-                                    exams.forEach { FirestoreSyncManager.deleteExamFromCloud(it.id) }
+                                    if (isResettingData) return@SettingsScreen
+                                    val hadSignedInUser = AuthManager.currentUser != null
+                                    isResettingData = true
+                                    FirestoreSyncManager.clearCurrentUserData { error ->
+                                        if (error != null) {
+                                            isResettingData = false
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("Couldn’t clear your cloud data. Check your connection and try again.")
+                                            }
+                                            return@clearCurrentUserData
+                                        }
 
-                                    vm.clearAll()
-                                    attendanceRepo.clearAll()
-                                    examRepo.clearAll()
-                                    prefs.edit().clear().apply()
+                                        AlarmScheduler.cancelAll(context, entries)
+                                        vm.clearAll()
+                                        attendanceRepo.clearAll()
+                                        examRepo.clearAll()
+                                        prefs.edit().clear().apply()
 
-                                    attendanceRecords = emptyMap()
-                                    exams = emptyList()
-                                    selectedWallpaper = "builtin:0"
-                                    is24Hour = false
-                                    weekStartsMonday = true
-                                    remindersEnabled = true
-                                    reminderLeadMinutes = 10
+                                        attendanceRecords = emptyMap()
+                                        exams = emptyList()
+                                        selectedWallpaper = "builtin:0"
+                                        is24Hour = false
+                                        weekStartsMonday = true
+                                        remindersEnabled = true
+                                        reminderLeadMinutes = 10
+                                        isResettingData = false
 
-                                    coroutineScope.launch {
-                                        TimetableWidget.refreshAll(context)
-                                        snackbarHostState.showSnackbar("App reset to factory clean state ✨")
+                                        coroutineScope.launch {
+                                            TimetableWidget.refreshAll(context)
+                                            snackbarHostState.showSnackbar(
+                                                if (hadSignedInUser) "Local and cloud data cleared." else "Local app data cleared."
+                                            )
+                                        }
                                     }
                                 }
                             )

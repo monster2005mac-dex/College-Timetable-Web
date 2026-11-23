@@ -1,9 +1,12 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 interface EventProgressBarProps {
   subject: string;
   eventDate: string;
   startMin: number;
   endMin: number;
-  now: Date;
 }
 
 function localDateKey(date: Date) {
@@ -11,26 +14,38 @@ function localDateKey(date: Date) {
   return localDate.toISOString().slice(0, 10);
 }
 
-export default function EventProgressBar({ subject, eventDate, startMin, endMin, now }: EventProgressBarProps) {
+export default function EventProgressBar({ subject, eventDate, startMin, endMin }: EventProgressBarProps) {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const today = localDateKey(now);
   const currentMinute = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60 + now.getMilliseconds() / 60_000;
-  const duration = Math.max(0, endMin - startMin);
-  const progress = today < eventDate
+  const duration = endMin - startMin;
+  const isUpcomingDate = today < eventDate;
+  const isPastDate = today > eventDate;
+  const isValidDuration = Number.isFinite(duration) && duration > 0;
+  const progress = isUpcomingDate
     ? 0
-    : today > eventDate || (duration === 0 && currentMinute >= endMin)
+    : isPastDate || currentMinute >= endMin
       ? 100
-      : duration === 0
-        ? 0
-        : Math.max(0, Math.min(100, ((currentMinute - startMin) / duration) * 100));
+      : isValidDuration
+        ? Math.max(0, Math.min(100, ((currentMinute - startMin) / duration) * 100))
+        : 0;
   const roundedProgress = Math.round(progress);
-  const isLive = today === eventDate && currentMinute >= startMin && currentMinute < endMin;
-  const status = today < eventDate
-    ? "UPCOMING"
-    : today > eventDate || currentMinute >= endMin
-      ? "COMPLETED"
-      : isLive
-        ? `IN SESSION · ${roundedProgress}%`
-        : `STARTS IN ${Math.ceil(startMin - currentMinute)}M`;
+  const isLive = today === eventDate && isValidDuration && currentMinute >= startMin && currentMinute < endMin;
+  const status = !isValidDuration
+    ? "TIME UNAVAILABLE"
+    : isUpcomingDate
+      ? "UPCOMING"
+      : isPastDate || currentMinute >= endMin
+        ? "COMPLETED"
+        : isLive
+          ? `IN SESSION · ${roundedProgress}% · ${Math.ceil(endMin - currentMinute)}M LEFT`
+          : `STARTS IN ${Math.ceil(Math.max(0, startMin - currentMinute))}M`;
 
   return (
     <div className={`event-progress ${isLive ? "is-live" : ""}`}>
