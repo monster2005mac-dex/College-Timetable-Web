@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
+import { subscribeUserProfile } from "@/lib/firestore";
 
 const navigation = [
   { href: "/dashboard", label: "Day", icon: LayoutDashboard },
@@ -34,8 +35,29 @@ export default function SiteHeader() {
     router.push(`${href}?date=${date}`);
   };
   const [user, setUser] = useState<User | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [failedImageUrl, setFailedImageUrl] = useState("");
 
   useEffect(() => onAuthStateChanged(auth, setUser), []);
+
+  useEffect(() => {
+    if (!user) {
+      setProfileImageUrl("");
+      setFailedImageUrl("");
+      return;
+    }
+    return subscribeUserProfile(user.uid, (profile) => {
+      setProfileImageUrl(profile.profileImageUrl ?? "");
+      setFailedImageUrl("");
+    });
+  }, [user]);
+
+  const avatarImageUrl = profileImageUrl && failedImageUrl !== profileImageUrl
+    ? profileImageUrl
+    : user?.photoURL && failedImageUrl !== user.photoURL
+      ? user.photoURL
+      : "";
+  const avatarInitial = (user?.displayName || user?.email || "Student").trim().charAt(0).toUpperCase() || "S";
 
   return (
     <header className="site-header">
@@ -61,9 +83,27 @@ export default function SiteHeader() {
       </nav>
 
       <div className="header-actions">
-        <Link href={user ? "/dashboard" : "/login"} onClick={(event) => navigateWithDate(event, user ? "/dashboard" : "/login")} className="nav-cta">
-          {user ? "Open schedule" : "Student sign in"} <span aria-hidden="true">↗</span>
-        </Link>
+        {user ? (
+          <Link
+            href="/profile"
+            onClick={(event) => navigateWithDate(event, "/profile")}
+            className="profile-nav-link"
+            aria-label={`Open ${user.displayName || user.email || "student"} profile`}
+            title="Profile"
+          >
+            <span className="profile-nav-avatar" aria-hidden="true">
+              {avatarImageUrl ? (
+                <img src={avatarImageUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedImageUrl(avatarImageUrl)} />
+              ) : (
+                <span>{avatarInitial}</span>
+              )}
+            </span>
+          </Link>
+        ) : (
+          <Link href="/login" onClick={(event) => navigateWithDate(event, "/login")} className="nav-cta">
+            Student sign in <span aria-hidden="true">↗</span>
+          </Link>
+        )}
       </div>
     </header>
   );
