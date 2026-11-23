@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import SiteHeader from "@/components/SiteHeader";
+import BiometricGate from "@/components/BiometricGate";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,15 +28,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col antialiased">
-        <SiteHeader />
-        <main className="site-main">{children}</main>
-        <footer className="site-footer">
-          <p>© {new Date().getFullYear()} CAMPUS ORBIT WEB · MADE FOR THE IN-BETWEEN</p>
-          <div>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-          </div>
-        </footer>
+        <BiometricGate>
+          <SiteHeader />
+          <main className="site-main">{children}</main>
+          <footer className="site-footer">
+            <p>© {new Date().getFullYear()} CAMPUS ORBIT WEB · MADE FOR THE IN-BETWEEN</p>
+            <div>
+              <a href="/privacy">Privacy</a>
+              <a href="/terms">Terms</a>
+            </div>
+          </footer>
+        </BiometricGate>
       </body>
     </html>
   );
