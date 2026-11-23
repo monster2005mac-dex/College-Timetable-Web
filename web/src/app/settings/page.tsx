@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { exportTimetableIcs } from "@/lib/exportIcs";
 import { Fingerprint } from "lucide-react";
+import DevicePinSettings from "@/components/DevicePinSettings";
 import {
   checkDeviceBiometricAvailable,
   isDeviceBiometricEnabled,
@@ -34,6 +35,7 @@ export default function SettingsPage() {
   const [reminders, setReminders] = useState(true);
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricStatusLoaded, setBiometricStatusLoaded] = useState(false);
   const [isUpdatingBiometrics, setIsUpdatingBiometrics] = useState(false);
   const [biometricMessage, setBiometricMessage] = useState("");
   const [biometricError, setBiometricError] = useState("");
@@ -55,9 +57,11 @@ export default function SettingsPage() {
     if (!user) {
       setBiometricSupported(false);
       setBiometricEnabled(false);
+      setBiometricStatusLoaded(true);
       return;
     }
 
+    setBiometricStatusLoaded(false);
     let active = true;
     Promise.all([
       checkDeviceBiometricAvailable(),
@@ -66,6 +70,7 @@ export default function SettingsPage() {
       if (!active) return;
       setBiometricSupported(supported);
       setBiometricEnabled(enabled);
+      setBiometricStatusLoaded(true);
     });
 
     return () => {
@@ -105,11 +110,11 @@ export default function SettingsPage() {
       if (biometricEnabled) {
         await removeDeviceBiometrics(user.uid);
         setBiometricEnabled(false);
-        setBiometricMessage("Device biometric unlock is turned off for this browser.");
+        setBiometricMessage("The device passkey lock and its Firebase PIN fallback were removed.");
       } else {
         await registerDeviceBiometrics(user.uid, user.email ?? "", user.displayName ?? "");
         setBiometricEnabled(true);
-        setBiometricMessage("Device biometric unlock is enabled. You’ll be asked to unlock after this app is reopened or refreshed.");
+        setBiometricMessage("Device passkey unlock is enabled. You can now add a Firebase PIN fallback below.");
       }
     } catch (error) {
       setBiometricError(error instanceof Error ? error.message : "Could not update biometric settings.");
@@ -126,7 +131,7 @@ export default function SettingsPage() {
     try {
       await clearUserFirestoreData(user.uid);
       setIsClearDialogOpen(false);
-      setClearDataMessage("Your Campus Orbit data has been removed from Firestore. Your account is still active.");
+      setClearDataMessage("Your schedule, profile, and device PIN records have been removed from Firebase. Your account is still active.");
     } catch {
       setClearDataError("We couldn’t clear all of your cloud data. Check your connection and try again.");
     } finally {
@@ -205,6 +210,13 @@ export default function SettingsPage() {
         {biometricError && <p className="text-sm text-red-200" role="alert">{biometricError}</p>}
       </section>
 
+      {user && (
+        <DevicePinSettings
+          userId={user.uid}
+          canConfigure={biometricStatusLoaded && (biometricEnabled || !biometricSupported)}
+        />
+      )}
+
       {clearDataMessage && <p className="rounded-xl border border-[#b7f479]/30 bg-[#b7f479]/10 p-4 text-sm text-[#d7ffb5]" role="status">{clearDataMessage}</p>}
       {clearDataError && <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200" role="alert">{clearDataError}</p>}
 
@@ -213,7 +225,7 @@ export default function SettingsPage() {
           <h2 id="clear-cloud-data-title" className="text-lg font-bold text-white">Clear cloud data</h2>
           <p className="mt-2 text-xs leading-5 text-white/70">
             {user
-              ? "Permanently remove your saved schedule, attendance, exams, and profile details from Firestore. This affects only the signed-in account and does not delete your Firebase sign-in."
+              ? "Permanently remove your saved schedule, attendance, exams, profile details, and device PIN records from Firebase. This affects only the signed-in account and does not delete your Firebase sign-in."
               : "Sign in to view your cloud sync status or clear your Firestore data."}
           </p>
         </div>
