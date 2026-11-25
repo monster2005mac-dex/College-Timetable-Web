@@ -1,11 +1,7 @@
-import { httpsCallable } from "firebase/functions";
-import { auth, functions } from "./firebase";
-
 type StoredBiometricSetting = {
   userId: string;
   enabled?: boolean;
   credentialId?: string;
-  deviceId?: string;
 };
 
 const DATABASE_NAME = "campus-orbit-device-lock";
@@ -55,16 +51,6 @@ function matchesUserHandle(userHandle: ArrayBuffer | null, userId: string): bool
   return expected.length === actual.length && expected.every((value, index) => value === actual[index]);
 }
 
-function writeBiometricSetting(setting: StoredBiometricSetting): Promise<void> {
-  return openCredentialDatabase().then((database) => new Promise<void>((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, "readwrite");
-    transaction.objectStore(STORE_NAME).put(setting);
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Could not save device lock settings."));
-    transaction.onabort = () => reject(transaction.error ?? new Error("Could not save device lock settings."));
-  }).finally(() => database.close()));
-}
-
 export async function checkDeviceBiometricAvailable(): Promise<boolean> {
   if (typeof window === "undefined" || !window.PublicKeyCredential) return false;
   try {
@@ -86,26 +72,6 @@ function readBiometricSetting(userId: string): Promise<StoredBiometricSetting | 
       reject(request.error ?? new Error("Could not read biometric settings."));
     };
   }));
-}
-
-function assertCurrentUser(userId: string): void {
-  if (auth.currentUser?.uid !== userId) {
-    throw new Error("Sign in to manage this device PIN.");
-  }
-}
-
-async function getExistingDeviceId(userId: string): Promise<string | undefined> {
-  return (await readBiometricSetting(userId))?.deviceId;
-}
-
-async function getOrCreateDeviceId(userId: string): Promise<string> {
-  const setting = await readBiometricSetting(userId);
-  if (setting?.deviceId) return setting.deviceId;
-
-  const bytes = window.crypto.getRandomValues(new Uint8Array(32));
-  const deviceId = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  await writeBiometricSetting({ ...setting, userId, deviceId });
-  return deviceId;
 }
 
 export async function isDeviceBiometricEnabled(userId: string): Promise<boolean> {
@@ -144,8 +110,14 @@ export async function registerDeviceBiometrics(userId: string, email: string, di
     throw new Error("Your device did not create a biometric credential.");
   }
 
-  const setting = await readBiometricSetting(userId);
-  await writeBiometricSetting({ ...setting, userId, enabled: true });
+  const database = await openCredentialDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readwrite");
+    transaction.objectStore(STORE_NAME).put({ userId, enabled: true } satisfies StoredBiometricSetting);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Could not save biometric settings."));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Could not save biometric settings."));
+  }).finally(() => database.close());
 }
 
 export async function authenticateWithDeviceBiometrics(userId: string): Promise<void> {
@@ -179,88 +151,7 @@ export async function authenticateWithDeviceBiometrics(userId: string): Promise<
   }
 }
 
-async function callPinFunction<RequestData, ResponseData>(
-  userId: string,
-  name: string,
-  data: RequestData,
-): Promise<ResponseData> {
-  assertCurrentUser(userId);
-  const callable = httpsCallable<RequestData, ResponseData>(functions, name);
-  const result = await callable(data);
-  assertCurrentUser(userId);
-  return result.data;
-}
-
-export async function hasDevicePin(userId: string): Promise<boolean> {
-  assertCurrentUser(userId);
-  const deviceId = await getExistingDeviceId(userId);
-  if (!deviceId) return false;
-
-  const result = await callPinFunction<{ deviceId: string }, { hasPin: boolean }>(userId, "hasDevicePin", { deviceId });
-  return result.hasPin;
-}
-
-export async function setDevicePin(userId: string, pin: string, currentPin?: string): Promise<void> {
-  assertCurrentUser(userId);
-  if (!/^\d{6}$/.test(pin)) throw new Error("Choose a 6-digit PIN.");
-  if (currentPin && !/^\d{6}$/.test(currentPin)) throw new Error("Enter your current 6-digit PIN.");
-
-  const biometricEnabled = await isDeviceBiometricEnabled(userId);
-  const biometricAvailable = await checkDeviceBiometricAvailable();
-  if (biometricAvailable && !biometricEnabled) {
-    throw new Error("Set up the device passkey before adding a PIN fallback.");
-  }
-
-  const existingDeviceId = await getExistingDeviceId(userId);
-  const deviceId = existingDeviceId ?? await getOrCreateDeviceId(userId);
-  const requestData = currentPin ? { deviceId, pin, currentPin } : { deviceId, pin };
-  try {
-    await callPinFunction<typeof requestData, { saved: boolean }>(userId, "setDevicePin", requestData);
-  } catch (error) {
-    const errorCode = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
-    if (!existingDeviceId && ["functions/not-found", "functions/unauthenticated", "functions/invalid-argument"].includes(errorCode)) {
-      const setting = await readBiometricSetting(userId);
-      if (setting?.deviceId === deviceId) {
-        const updated = { ...setting };
-        delete updated.deviceId;
-        await writeBiometricSetting(updated);
-      }
-    }
-    throw error;
-  }
-}
-
-export async function verifyDevicePin(userId: string, pin: string): Promise<void> {
-  assertCurrentUser(userId);
-  if (!/^\d{6}$/.test(pin)) throw new Error("Enter your 6-digit PIN.");
-  const deviceId = await getExistingDeviceId(userId);
-  if (!deviceId) throw new Error("No PIN is set for this device.");
-
-  await callPinFunction<{ deviceId: string; pin: string }, { verified: boolean }>(
-    userId,
-    "verifyDevicePin",
-    { deviceId, pin },
-  );
-}
-
-export async function removeDevicePin(userId: string): Promise<void> {
-  assertCurrentUser(userId);
-  const setting = await readBiometricSetting(userId);
-  if (!setting?.deviceId) return;
-  await callPinFunction<{ deviceId: string }, { removed: boolean }>(userId, "removeDevicePin", { deviceId: setting.deviceId });
-
-  const updated = { ...setting };
-  delete updated.deviceId;
-  await writeBiometricSetting(updated);
-}
-
-export async function clearAllDevicePins(userId: string): Promise<void> {
-  assertCurrentUser(userId);
-  await callPinFunction<Record<string, never>, { removed: number }>(userId, "clearAllDevicePins", {});
-}
-
 export async function removeDeviceBiometrics(userId: string): Promise<void> {
-  await removeDevicePin(userId);
   const database = await openCredentialDatabase();
   await new Promise<void>((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readwrite");

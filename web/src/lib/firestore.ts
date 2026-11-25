@@ -8,7 +8,6 @@ import {
   getDocs,
   writeBatch,
 } from "firebase/firestore";
-import { clearAllDevicePins } from "./webauthn";
 import { db } from "./firebase";
 
 export interface ClassEntry {
@@ -78,7 +77,6 @@ export async function getUserDataExport(userId: string) {
 }
 
 export async function clearUserFirestoreData(userId: string) {
-  await clearAllDevicePins(userId);
   const userPath = ["users", userId] as const;
   const collectionNames = ["entries", "attendance", "exams", "profile"] as const;
 
