@@ -157,7 +157,7 @@ export default function DevicePinSettings({ userId, canConfigure }: DevicePinSet
       )}
 
       <p className="text-[11px] leading-5 text-white/50">
-        The PIN is private to this signed-in account and this browser profile. Firebase stores only its salted hash and attempt lockout under your account; other accounts on this browser have separate PINs. The PIN itself is never saved in browser storage.
+        The PIN is sent over HTTPS to a Firebase Function for verification; only its salted hash and attempt lockout are saved in Firestore. The app does not save the PIN in browser storage. A random device identifier stays in this browser profile and is not synced by the app, so other signed-in devices do not get this PIN.
       </p>
       {message && <p className="text-sm text-[#d7ffb5]" role="status">{message}</p>}
       {error && <p className="text-sm text-red-200" role="alert">{error}</p>}

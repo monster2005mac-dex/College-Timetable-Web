@@ -179,16 +179,9 @@ export async function authenticateWithDeviceBiometrics(userId: string): Promise<
   }
 }
 
-async function callPinFunction<RequestData, ResponseData>(
-  userId: string,
-  name: string,
-  data: RequestData,
-): Promise<ResponseData> {
-  assertCurrentUser(userId);
+async function callPinFunction<RequestData, ResponseData>(name: string, data: RequestData): Promise<ResponseData> {
   const callable = httpsCallable<RequestData, ResponseData>(functions, name);
-  const result = await callable(data);
-  assertCurrentUser(userId);
-  return result.data;
+  return (await callable(data)).data;
 }
 
 export async function hasDevicePin(userId: string): Promise<boolean> {
@@ -196,7 +189,7 @@ export async function hasDevicePin(userId: string): Promise<boolean> {
   const deviceId = await getExistingDeviceId(userId);
   if (!deviceId) return false;
 
-  const result = await callPinFunction<{ deviceId: string }, { hasPin: boolean }>(userId, "hasDevicePin", { deviceId });
+  const result = await callPinFunction<{ deviceId: string }, { hasPin: boolean }>("hasDevicePin", { deviceId });
   return result.hasPin;
 }
 
@@ -215,7 +208,7 @@ export async function setDevicePin(userId: string, pin: string, currentPin?: str
   const deviceId = existingDeviceId ?? await getOrCreateDeviceId(userId);
   const requestData = currentPin ? { deviceId, pin, currentPin } : { deviceId, pin };
   try {
-    await callPinFunction<typeof requestData, { saved: boolean }>(userId, "setDevicePin", requestData);
+    await callPinFunction<typeof requestData, { saved: boolean }>("setDevicePin", requestData);
   } catch (error) {
     const errorCode = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
     if (!existingDeviceId && ["functions/not-found", "functions/unauthenticated", "functions/invalid-argument"].includes(errorCode)) {
@@ -237,7 +230,6 @@ export async function verifyDevicePin(userId: string, pin: string): Promise<void
   if (!deviceId) throw new Error("No PIN is set for this device.");
 
   await callPinFunction<{ deviceId: string; pin: string }, { verified: boolean }>(
-    userId,
     "verifyDevicePin",
     { deviceId, pin },
   );
@@ -247,7 +239,7 @@ export async function removeDevicePin(userId: string): Promise<void> {
   assertCurrentUser(userId);
   const setting = await readBiometricSetting(userId);
   if (!setting?.deviceId) return;
-  await callPinFunction<{ deviceId: string }, { removed: boolean }>(userId, "removeDevicePin", { deviceId: setting.deviceId });
+  await callPinFunction<{ deviceId: string }, { removed: boolean }>("removeDevicePin", { deviceId: setting.deviceId });
 
   const updated = { ...setting };
   delete updated.deviceId;
@@ -256,7 +248,7 @@ export async function removeDevicePin(userId: string): Promise<void> {
 
 export async function clearAllDevicePins(userId: string): Promise<void> {
   assertCurrentUser(userId);
-  await callPinFunction<Record<string, never>, { removed: number }>(userId, "clearAllDevicePins", {});
+  await callPinFunction<Record<string, never>, { removed: number }>("clearAllDevicePins", {});
 }
 
 export async function removeDeviceBiometrics(userId: string): Promise<void> {

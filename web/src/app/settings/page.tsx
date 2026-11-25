@@ -212,7 +212,6 @@ export default function SettingsPage() {
 
       {user && (
         <DevicePinSettings
-          key={user.uid}
           userId={user.uid}
           canConfigure={biometricStatusLoaded && (biometricEnabled || !biometricSupported)}
         />
