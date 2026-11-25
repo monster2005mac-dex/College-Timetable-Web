@@ -21,6 +21,3 @@
 /web/npm-debug.log*
 /web/yarn-debug.log*
 /web/yarn-error.log*
-/functions/node_modules
-/functions/.runtimeconfig.json
-/.firebase
