@@ -21,6 +21,7 @@ export default function BiometricGate({ children }: { children: React.ReactNode 
     return onAuthStateChanged(auth, (user) => {
       const checkId = ++authCheckId.current;
       setError("");
+      setIsUnlocking(false);
       setGateState("loading");
       setLockedUser(user);
 
@@ -41,30 +42,41 @@ export default function BiometricGate({ children }: { children: React.ReactNode 
 
   const unlock = async () => {
     if (!lockedUser || isUnlocking) return;
+    const checkId = authCheckId.current;
     setIsUnlocking(true);
     setError("");
     try {
       await authenticateWithDeviceBiometrics(lockedUser.uid);
+      if (checkId !== authCheckId.current || auth.currentUser?.uid !== lockedUser.uid) return;
       setGateState("open");
     } catch (unlockError) {
-      setError(unlockError instanceof Error ? unlockError.message : "Biometric verification failed. Try again.");
+      if (checkId !== authCheckId.current || auth.currentUser?.uid !== lockedUser.uid) return;
+      setError(
+        unlockError instanceof Error && unlockError.name === "NotAllowedError"
+          ? "The biometric prompt was canceled or timed out. Try again."
+          : unlockError instanceof Error
+            ? unlockError.message
+            : "Biometric verification failed. Try again.",
+      );
     } finally {
-      setIsUnlocking(false);
+      if (checkId === authCheckId.current) setIsUnlocking(false);
     }
   };
 
   const forgetDeviceAndSignOut = async () => {
     if (!lockedUser || isUnlocking) return;
+    const checkId = authCheckId.current;
     setIsUnlocking(true);
     setError("");
     try {
       await removeDeviceBiometrics(lockedUser.uid);
+      if (checkId !== authCheckId.current || auth.currentUser?.uid !== lockedUser.uid) return;
       await signOut(auth);
       router.replace("/login");
     } catch {
-      setError("Could not remove the biometric lock. Please try again.");
+      if (checkId === authCheckId.current) setError("Could not remove the biometric lock. Please try again.");
     } finally {
-      setIsUnlocking(false);
+      if (checkId === authCheckId.current) setIsUnlocking(false);
     }
   };
 
